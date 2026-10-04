@@ -43,8 +43,9 @@ service cloud.firestore {
    allow read: if owner(uid);
    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['deleting']) && request.resource.data.deleting is bool;
   }
-  function writableProject(uid,projectId) { return owner(uid) && (!exists(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance) || get(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance).data.deleting == false); }
+  function writableProject(uid,projectId) { return owner(uid) && exists(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)) && (!exists(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance) || get(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance).data.deleting == false); }
   match /users/{uid}/projects/{projectId} {
+   allow delete: if owner(uid);
    allow read: if owner(uid);
    allow create: if owner(uid) && projectId.matches('^p_[A-Za-z0-9_-]{1,78}$') && request.resource.data.keys().hasOnly(['id','name','createdAt']) && request.resource.data.id == projectId && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80 && request.resource.data.createdAt is string;
   match /tools/{serial} {
@@ -81,7 +82,7 @@ service cloud.firestore {
    allow create, update: if writableProject(uid,projectId) && request.resource.data.keys().hasOnly(['id','title','date','type','serial','notes','createdAt']) && request.resource.data.id == id && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 160 && validDate(request.resource.data.date) && request.resource.data.type in ['INSPECTION','REPAIR','BHA'] && (request.resource.data.serial == '' || validSerial(request.resource.data.serial)) && request.resource.data.notes is string && request.resource.data.notes.size() <= 2000;
   }
   match /settings/maintenance {
-   allow read: if owner(uid);
+   allow read, delete: if owner(uid);
    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['deleting']) && request.resource.data.deleting is bool;
   }
   }
