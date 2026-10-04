@@ -43,6 +43,48 @@ service cloud.firestore {
    allow read: if owner(uid);
    allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['deleting']) && request.resource.data.deleting is bool;
   }
+  function writableProject(uid,projectId) { return owner(uid) && (!exists(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance) || get(/databases/$(database)/documents/users/$(uid)/projects/$(projectId)/settings/maintenance).data.deleting == false); }
+  match /users/{uid}/projects/{projectId} {
+   allow read: if owner(uid);
+   allow create: if owner(uid) && projectId.matches('^p_[A-Za-z0-9_-]{1,78}$') && request.resource.data.keys().hasOnly(['id','name','createdAt']) && request.resource.data.id == projectId && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80 && request.resource.data.createdAt is string;
+  match /tools/{serial} {
+   allow read: if owner(uid);
+   allow delete: if owner(uid);
+   allow create, update: if writableProject(uid,projectId) && request.resource.data.id == serial && request.resource.data.serial == serial && validSerial(serial) && request.resource.data.status in ['SIN_ESTADO_TECNICO','OPERATIVA','CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'];
+  }
+  match /documents/{id} {
+   allow delete: if owner(uid);
+   allow read: if owner(uid);
+   allow create: if writableProject(uid,projectId) && validDocument(id);
+   allow update: if writableProject(uid,projectId) && validDocument(id) && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.type == resource.data.type && request.resource.data.revision == resource.data.get('revision',0) + 1;
+  }
+  match /events/{id} {
+   allow read: if owner(uid);
+   allow delete: if owner(uid);
+   allow create, update: if writableProject(uid,projectId) && request.resource.data.id == id && validSerial(request.resource.data.serial) && request.resource.data.toolId == request.resource.data.serial && validDate(request.resource.data.date) && (
+    (request.resource.data.type == 'REPAIR' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.reportNumber.size() > 0 && request.resource.data.fields.workOrder.size() > 0 && request.resource.data.fields.repairDate == request.resource.data.date) ||
+    (request.resource.data.type == 'INSPECTION' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.certificateNumber.size() > 0 && request.resource.data.fields.formatCode.size() > 0 && request.resource.data.fields.finalConformity in ['CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'] && request.resource.data.fields.inspectionDate == request.resource.data.date) ||
+    (request.resource.data.type == 'BHA' && request.resource.data.fields.bhaNumber.size() > 0 && request.resource.data.fields.well.size() > 0 && request.resource.data.fields.bhaDate == request.resource.data.date));
+  }
+  match /bha/{id} {
+   allow delete: if owner(uid);
+   allow read: if owner(uid);
+   allow create, update: if writableProject(uid,projectId) && request.resource.data.id == id && request.resource.data.documentId == id && validDate(request.resource.data.date) && request.resource.data.number.size() > 0;
+  }
+  match /bhaMembers/{id} {
+   allow read: if owner(uid);
+   allow delete: if owner(uid);
+   allow create, update: if writableProject(uid,projectId) && request.resource.data.id == id && validSerial(request.resource.data.toolId) && request.resource.data.bhaId is string && request.resource.data.eventId == id;
+  }
+  match /scheduledEvents/{id} {
+   allow read, delete: if owner(uid);
+   allow create, update: if writableProject(uid,projectId) && request.resource.data.keys().hasOnly(['id','title','date','type','serial','notes','createdAt']) && request.resource.data.id == id && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 160 && validDate(request.resource.data.date) && request.resource.data.type in ['INSPECTION','REPAIR','BHA'] && (request.resource.data.serial == '' || validSerial(request.resource.data.serial)) && request.resource.data.notes is string && request.resource.data.notes.size() <= 2000;
+  }
+  match /settings/maintenance {
+   allow read: if owner(uid);
+   allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['deleting']) && request.resource.data.deleting is bool;
+  }
+  }
   match /{path=**} { allow read, write: if false; }
  }
 }
