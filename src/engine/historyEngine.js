@@ -1,0 +1,1 @@
+export function historyEngine(serial,events) { return events.filter(e=>e.serial===serial).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id)); }

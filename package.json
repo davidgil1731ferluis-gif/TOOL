@@ -1,0 +1,23 @@
+{
+  "name": "tooltrace",
+  "version": "5.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --configLoader native",
+    "build": "vite build --base=./ --configLoader native",
+    "test": "node --test tests/*.test.js",
+    "preview": "vite preview --host 127.0.0.1 --configLoader native",
+    "check:production": "node scripts/check-production-config.mjs"
+  },
+  "dependencies": {
+    "firebase": "12.3.0",
+    "pdfjs-dist": "5.4.149"
+  },
+  "devDependencies": {
+    "vite": "7.1.7"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
