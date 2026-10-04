@@ -2,6 +2,16 @@
 
 Aplicación web/PWA en español para asociar inspecciones, reparaciones y BHA a cada serial. HTML, CSS y JavaScript modular, Firebase Authentication y Firestore, con publicación estática en GitHub Pages.
 
+## Proyectos independientes
+
+El selector **Proyecto** permite cambiar de lugar de trabajo y **Nuevo proyecto** crea un espacio vacío. Cada proyecto tiene documentos, herramientas por serial, eventos, BHA, agenda, pendientes y PDFs locales propios. Dashboard, edición y Excel trabajan sobre el proyecto seleccionado. El mismo serial o PDF puede existir en proyectos diferentes; dentro de cada proyecto se mantienen los controles de duplicados. El nombre del proyecto aparece en el archivo Excel descargado.
+
+Los datos anteriores se muestran como **Proyecto principal**, conservando sus rutas y archivos originales. No se copian ni se borran para activar esta función. Los nuevos proyectos usan `users/{uid}/projects/{projectId}` con las colecciones operativas dentro. El proyecto principal conserva `users/{uid}/{collection}` para que las sesiones anteriores sigan siendo compatibles. Los documentos de proyecto guardan solo id, nombre y fecha de creación.
+
+**Eliminar datos** vacía únicamente el proyecto seleccionado y conserva los demás. Se mantiene la doble confirmación; no elimina la cuenta ni el nombre del proyecto. No se incluye todavía traslado de documentos entre proyectos, renombrado o eliminación del proyecto completo.
+
+Actualiza `firestore.rules` antes de desplegar esta versión. Los proyectos siguen siendo privados por cuenta y requieren correo verificado. Los PDFs permanecen en el navegador donde se cargaron, separados también por proyecto.
+
 ## Publicar en producción
 
 Sigue [PRODUCCION.md](PRODUCCION.md) para configurar Firebase y publicar mediante GitHub Pages. Resumen contiene solo indicadores y gráfico; Herramientas y Documentos tienen sus propias pantallas. Todos los campos del Excel están centrados horizontal y verticalmente, con bordes finos en cada celda.
