@@ -23,3 +23,14 @@ test('rutas de proyecto aíslan cuentas y archivos, principal conserva rutas exi
   assert.equal(projectOwner('user','principal'),'user');assert.equal(projectOwner('user','p_a'),'user/p_a');assert.notEqual(projectOwner('other','p_a'),projectOwner('user','p_a'));
   assert.throws(()=>projectPath('user','a/b'));assert.throws(()=>projectName(' '));assert.throws(()=>projectName('x'.repeat(81)));assert.equal(projectName('  Pozo   Norte '),'Pozo Norte');
 });
+test('eliminar un proyecto quita su nombre y estado sin afectar otros proyectos ni principal',async()=>{
+  const memory=new Map();globalThis.localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};
+  const directory=new DemoProjectDirectory(),a=await directory.create('Eliminar'),b=await directory.create('Conservar');
+  await new DemoRepository(a.id).saveSchedule({title:'A',date:'2026-10-04',type:'BHA'});
+  await new DemoRepository(b.id).saveSchedule({title:'B',date:'2026-10-04',type:'BHA'});
+  await directory.remove(a.id);
+  assert.deepEqual((await directory.list()).map(p=>p.id),['principal',b.id]);
+  assert.deepEqual(await new DemoRepository(a.id).load(),emptyState());
+  assert.equal((await new DemoRepository(b.id).load()).scheduledEvents.length,1);
+  await assert.rejects(()=>directory.remove('principal'),/principal/);
+});
