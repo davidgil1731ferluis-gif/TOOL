@@ -10,4 +10,5 @@ export class DemoProjectDirectory {
   constructor(){this.key='tooltrace-demo-projects-v1';}
   async list(){return [initialProject(),...JSON.parse(localStorage.getItem(this.key)||'[]')];}
   async create(name){const entry=newProject(name);const write=async()=>{const list=(await this.list()).filter(p=>p.id!==DEFAULT_PROJECT);list.push(entry);localStorage.setItem(this.key,JSON.stringify(list));return entry;};return navigator.locks?navigator.locks.request(this.key,write):write();}
+  async remove(id){projectId(id);if(id===DEFAULT_PROJECT)throw new Error('El proyecto principal se puede vaciar, pero no eliminar.');const write=async()=>{const list=(await this.list()).filter(p=>p.id!==DEFAULT_PROJECT&&p.id!==id);localStorage.setItem(this.key,JSON.stringify(list));localStorage.removeItem(demoStateKey(id));};return navigator.locks?navigator.locks.request(this.key,write):write();}
 }
