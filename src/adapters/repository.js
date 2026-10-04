@@ -5,6 +5,7 @@ import {eventCreator} from '../engine/eventCreator.js';
 import {statusEngine} from '../engine/statusEngine.js';
 import {toolGroup} from '../engine/toolGroup.js';
 import {scheduleEntry} from '../engine/calendar.js';
+import {demoStateKey} from './projects.js';
 export const collectionNames=['tools','documents','events','bha','bhaMembers'];
 export const emptyState=()=>({...Object.fromEntries(collectionNames.map(key=>[key,[]])),scheduledEvents:[]});
 export async function digest(value) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):value))].map(x=>x.toString(16).padStart(2,'0')).join(''); }
@@ -80,7 +81,7 @@ export function applyCommit(previous,prepared,{editing=false,baseRevision=0}={})
   return {state,writes,document:p.document};
 }
 export class DemoRepository {
-  constructor(){this.key='tooltrace-explicit-demo-v1';}
+  constructor(project='principal'){this.key=demoStateKey(project);}
   async load(){return {...emptyState(),...JSON.parse(localStorage.getItem(this.key)||'{}')};}
   async saveSchedule(input){const entry=scheduleEntry(input);const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==entry.id).concat(entry);localStorage.setItem(this.key,JSON.stringify(state));return entry;};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
   async deleteSchedule(id){const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==id);localStorage.setItem(this.key,JSON.stringify(state));};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
