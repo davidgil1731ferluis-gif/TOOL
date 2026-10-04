@@ -16,13 +16,13 @@ export class FirebaseRepository {
   async load(){const names=[...collectionNames,'scheduledEvents'];const sets=await Promise.all(names.map(n=>getDocs(collection(db,...this.path,n))));return Object.fromEntries(names.map((n,i)=>[n,sets[i].docs.map(d=>d.data())]));}
   async saveSchedule(input){const entry=scheduleEntry(input);await setDoc(this.ref('scheduledEvents',entry.id),entry);return entry;}
   async deleteSchedule(id){await deleteDoc(this.ref('scheduledEvents',id));}
-  async clearAll(){
+  async clearAll({deletingProject=false}={}){
     if(!navigator.onLine)throw new Error('Conéctate a internet para borrar los datos de la cuenta.');
     await setDoc(this.ref('settings','maintenance'),{deleting:true});
     // El bloqueo impide nuevas escrituras durante un borrado de varios lotes.
     // Si falla, se conserva el bloqueo y el usuario puede reintentar la limpieza.
     for(const name of [...collectionNames,'scheduledEvents']){const snapshot=await getDocs(collection(db,...this.path,name));for(let i=0;i<snapshot.docs.length;i+=400){const batch=writeBatch(db);for(const d of snapshot.docs.slice(i,i+400))batch.delete(d.ref);await batch.commit();}}
-    await setDoc(this.ref('settings','maintenance'),{deleting:false});
+    if(!deletingProject)await setDoc(this.ref('settings','maintenance'),{deleting:false});
   }
   async save(draft,options={}) {
     const prepared=await prepare(draft);
@@ -54,4 +54,5 @@ export class FirebaseProjectDirectory {
   constructor(uid){this.uid=uid;}
   async list(){const result=await getDocs(collection(db,'users',this.uid,'projects'));return [initialProject(),...result.docs.map(d=>({...d.data(),id:d.id})).filter(p=>p.id!==DEFAULT_PROJECT).sort((a,b)=>a.createdAt.localeCompare(b.createdAt))];}
   async create(name){const entry=newProject(name);await setDoc(doc(db,'users',this.uid,'projects',entry.id),entry);return entry;}
+  async remove(id){if(id===DEFAULT_PROJECT)throw new Error('El proyecto principal se puede vaciar, pero no eliminar.');const path=projectPath(this.uid,id);await deleteDoc(doc(db,...path));await deleteDoc(doc(db,...path,'settings','maintenance'));}
 }
