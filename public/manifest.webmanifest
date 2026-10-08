@@ -1,1 +1,31 @@
-{"name": "ToolTrace Â· Trazabilidad documental", "short_name": "ToolTrace", "lang": "es", "id": "./", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#ffffff", "theme_color": "#ffffff", "icons": [{"src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]}
+{
+  "name": "ToolTrace · Trazabilidad documental",
+  "short_name": "ToolTrace",
+  "lang": "es",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./tooltrace-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./tooltrace-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./tooltrace-maskable-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
