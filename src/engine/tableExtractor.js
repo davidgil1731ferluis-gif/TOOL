@@ -22,6 +22,7 @@ export function tablePage(rows,page=1,sheet=''){
     const rawSerial=String(fields.serial??'');delete fields.serial;
     records.push({serial:serialNormalizer(rawSerial),rawSerial,cells:fields,evidence:[{page,sheet,line:row.map(v=>v instanceof Date?v.toISOString().slice(0,10):String(v??'')).join(' | ')}]});
   }
+  if(header<0&&metadata.serial){const rawSerial=String(metadata.serial),fields={...metadata};delete fields.serial;records.push({serial:serialNormalizer(rawSerial),rawSerial,cells:fields,evidence:[{page,sheet,line:rows.map(r=>r.join(' : ')).join('\n')}]});}
   const keys=new Set([...Object.keys(metadata),...columns]);
   const types=[keys.has('inspectionDate')||keys.has('finalConformity')?'INSPECTION':'',keys.has('repairDate')||(keys.has('machining')&&keys.has('workOrder'))?'REPAIR':'',keys.has('bhaNumber')?'BHA':''].filter(Boolean);
   const type=types.length===1?types[0]:'';
