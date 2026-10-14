@@ -4,11 +4,11 @@ import {matrixValidator} from '../engine/matrixValidator.js';
 const col=(label,type='text')=>({label,type});
 export function reportModel(data,{group='ALL',search='',pending=[]}={}) {
   const matches=serial=>(group==='ALL'||toolGroup(serial)===group)&&serial.includes(search);
-  const tools=data.tools.filter(t=>matches(t.serial)).sort((a,b)=>toolGroup(a.serial).localeCompare(toolGroup(b.serial))||a.serial.localeCompare(b.serial));
+  const tools=data.tools.filter(t=>matches(t.serial)).sort((a,b)=>a.serial.localeCompare(b.serial));
   const documents=new Map(data.documents.map(d=>[d.id,d]));
   const names={INSPECTION:'Inspección',REPAIR:'Reparación',BHA:'BHA'};
   const results={CONFORME:'Conforme',NO_CONFORME_REPARABLE:'No conforme · reparable',NO_CONFORME_FUERA_SERVICIO:'Fuera de servicio'};
-  const serials=[...new Set([...tools.map(t=>t.serial),...data.events.filter(e=>matches(e.serial)).map(e=>e.serial)])].sort((a,b)=>toolGroup(a).localeCompare(toolGroup(b))||a.localeCompare(b));
+  const serials=[...new Set([...tools.map(t=>t.serial),...data.events.filter(e=>matches(e.serial)).map(e=>e.serial)])].sort((a,b)=>a.localeCompare(b));
   const grouped=new Map(serials.map(serial=>[serial,[]]));
   for(const e of data.events.filter(e=>matches(e.serial)).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt||'').localeCompare(b.createdAt||'')||a.id.localeCompare(b.id)))grouped.get(e.serial).push(e);
   const eventColumns=[col('Fecha','date'),col('Tipo'),col('Empresa'),col('Reporte'),col('Resultado'),col('Detalles clave')];
