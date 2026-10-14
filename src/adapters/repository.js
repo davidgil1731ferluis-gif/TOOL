@@ -80,12 +80,26 @@ export function applyCommit(previous,prepared,{editing=false,baseRevision=0}={})
   if(writes.length>480) throw new Error('Demasiados cambios para una sola operación. Modifica menos seriales a la vez.');
   return {state,writes,document:p.document};
 }
+export function applyDocumentRemoval(previous,id,{baseRevision}={}) {
+  const document=previous.documents.find(d=>d.id===id);
+  if(document&&baseRevision!==undefined&&(document.revision||0)!==baseRevision)throw new Error('El reporte cambió en otra sesión. Ábrelo de nuevo antes de eliminar.');
+  const state=structuredClone(previous),removed=state.events.filter(e=>e.documentId===id),eventIds=new Set(removed.map(e=>e.id));
+  state.documents=state.documents.filter(d=>d.id!==id);state.events=state.events.filter(e=>e.documentId!==id);
+  state.bha=state.bha.filter(b=>b.documentId!==id&&b.id!==id);
+  state.bhaMembers=state.bhaMembers.filter(m=>m.bhaId!==id&&!eventIds.has(m.eventId));
+  for(const serial of new Set(removed.map(e=>e.serial))){const tool=state.tools.find(t=>t.serial===serial),events=state.events.filter(e=>e.serial===serial);state.tools=state.tools.filter(t=>t.serial!==serial);if(events.length)state.tools.push({...tool,id:serial,serial,group:toolGroup(serial),eventIds:events.map(e=>e.id),...statusEngine(events)});}
+  const writes=[];
+  for(const name of collectionNames){const before=new Map(previous[name].map(x=>[x.id,x])),after=new Map(state[name].map(x=>[x.id,x]));for(const [id,value] of after)if(JSON.stringify(before.get(id))!==JSON.stringify(value))writes.push({name,id,value});for(const id of before.keys())if(!after.has(id))writes.push({name,id,remove:true});}
+  if(writes.length>480)throw new Error('El documento supera el límite de cambios de una sola operación.');
+  return {state,writes};
+}
 export class DemoRepository {
   constructor(project='principal'){this.key=demoStateKey(project);}
   async load(){return {...emptyState(),...JSON.parse(localStorage.getItem(this.key)||'{}')};}
   async saveSchedule(input){const entry=scheduleEntry(input);const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==entry.id).concat(entry);localStorage.setItem(this.key,JSON.stringify(state));return entry;};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
   async deleteSchedule(id){const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==id);localStorage.setItem(this.key,JSON.stringify(state));};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
   async clearAll(){const commit=()=>localStorage.setItem(this.key,JSON.stringify(emptyState()));return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
+  async deleteDocument(id,options={}){const commit=async()=>{const result=applyDocumentRemoval(await this.load(),id,options);localStorage.setItem(this.key,JSON.stringify(result.state));};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
   async save(draft,options={}) {
     const prepared=await prepare(draft);
     const commit=async()=>{const result=applyCommit(await this.load(),prepared,options);localStorage.setItem(this.key,JSON.stringify(result.state));return result.document;};
