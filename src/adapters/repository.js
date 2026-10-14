@@ -6,6 +6,7 @@ import {statusEngine} from '../engine/statusEngine.js';
 import {toolGroup} from '../engine/toolGroup.js';
 import {scheduleEntry} from '../engine/calendar.js';
 import {demoStateKey} from './projects.js';
+import {needsCountReview,confirmedCount} from '../engine/countValidator.js';
 export const collectionNames=['tools','documents','events','bha','bhaMembers'];
 export const emptyState=()=>({...Object.fromEntries(collectionNames.map(key=>[key,[]])),scheduledEvents:[]});
 export async function digest(value) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):value))].map(x=>x.toString(16).padStart(2,'0')).join(''); }
@@ -16,7 +17,7 @@ export function documentErrors(draft) {
   if(!fieldDefinitions[draft.type]) errors.push('Seleccione el tipo de documento.');
   if(!draft.records?.length) errors.push('No se detectaron seriales.');
   if(draft.records?.length>100) errors.push('Máximo 100 seriales por documento.');
-  if(draft.expectedCount&&draft.records?.length!==draft.expectedCount) errors.push(`El PDF indica ${draft.expectedCount} seriales y se detectaron ${draft.records?.length||0}.`);
+  if(needsCountReview(draft)&&(draft.validationMode==='automatic'||!confirmedCount(draft))) errors.push(draft.expectedCount&&draft.records?.length!==draft.expectedCount?`El documento indica ${draft.expectedCount} seriales y se detectaron ${draft.records?.length||0}. Revisa la lista y confirma la cantidad detectada.`:'El documento contiene cantidades distintas. Revisa la lista y confirma la cantidad detectada.');
   const seen=new Set();
   for(const record of draft.records||[]) {
     const serial=serialNormalizer(record.serial);
@@ -38,7 +39,8 @@ export async function prepare(draft) {
     const id=await digest(JSON.stringify([draft.type,(fields.issuer||'').toUpperCase(),ref,serial,date,fields.well||'']));
     events.push({...eventCreator(draft.type,{...record,serial,fields,template:record.template||draft.template},draft.id,id,at),sourceEventId:record.sourceEventId||''});
   }
-  const document={id:draft.id,name:draft.name,type:draft.type,template:draft.template||'GENERIC_REVIEW',sha256:draft.id,recordCount:events.length,createdAt:at,storage:'LOCAL_DEVICE',reviewed:true,validationMode:draft.validationMode||'automatic',eventIds:events.map(e=>e.id),revision:1};
+  const document={id:draft.id,name:draft.name,type:draft.type,template:draft.template||'GENERIC_REVIEW',sha256:draft.id,recordCount:events.length,createdAt:at,storage:'LOCAL_DEVICE',reviewed:true,validationMode:draft.validationMode||(confirmedCount(draft)?'corrected':'automatic'),eventIds:events.map(e=>e.id),revision:1};
+  if(draft.expectedCount||draft.countEvidence?.length){document.expectedCount=Number(draft.expectedCount)||0;document.countEvidence=draft.countEvidence||[];if(confirmedCount(draft))document.countConfirmation=draft.countConfirmation;}
   const bha=draft.type==='BHA'?{id:draft.id,documentId:draft.id,number:events[0].fields.bhaNumber,well:events[0].fields.well,phase:events[0].fields.phase,date:events[0].date,createdAt:at}:null;
   return {document,events,bha};
 }

@@ -4,6 +4,8 @@ Aplicación web/PWA en español para asociar inspecciones, reparaciones y BHA a 
 
 ## Carga de archivos y reconocimiento ampliado
 
+**Diferencias de cantidad:** si el texto indica 12 y se detectan 22 seriales, abre **Documentos → Completar**. En **Revisar cantidad de seriales** consulta la lista, el original y las páginas donde se leyó cada cantidad; después pulsa **Confirmar los 22 seriales detectados** y **Guardar reporte**. Es una confirmación para todo el documento y funciona con pendientes ya cargados, sin volver a subirlos. Se conservan el conteo leído y la lista confirmada con fecha. Si cambias los seriales o la cantidad original, se debe confirmar de nuevo. Esto no omite campos obligatorios, fechas ni controles de duplicados. Cantidades contradictorias nunca se resuelven tomando simplemente el número mayor.
+
 **Cargar archivos** admite PDF, Excel XLSX/XLS, ODS, CSV/TSV, TXT e imágenes PNG/JPG/WebP/BMP. Se puede cargar una mezcla de formatos en un mismo lote. El original se conserva localmente antes de leerlo y su huella SHA-256 evita duplicados aunque se renombre. Las entidades, proyectos, estados e historial conservan su funcionamiento.
 
 - PDF: mantiene los lectores TOTAL QC, NOV Tuboscope, SAIS y BHA. Las páginas con menos de 80 caracteres útiles pasan por OCR. Las tablas de otros emisores pueden reconocerse por sus encabezados y posición de las columnas.
