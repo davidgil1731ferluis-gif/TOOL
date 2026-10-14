@@ -19,7 +19,7 @@ export function documentErrors(draft) {
   for(const record of draft.records||[]) {
     const serial=serialNormalizer(record.serial);
     if(seen.has(serial)) errors.push(`Serial repetido: ${serial}.`);seen.add(serial);
-    errors.push(...matrixValidator(draft.type,{...record,serial}).map(error=>`${serial||'Sin serial'}: ${error}`));
+    errors.push(...matrixValidator(draft.type,{...record,serial,template:record.template||draft.template}).map(error=>`${serial||'Sin serial'}: ${error}`));
   }
   const common={INSPECTION:['certificateNumber','formatCode','formatVersion','versionDate','issuer','inspectionDate','issueDate'],REPAIR:['issuer','reportNumber','workOrder'],BHA:['bhaNumber','well','phase','bhaDate']}[draft.type]||[];
   for(const key of common) if(new Set((draft.records||[]).map(r=>String(r.fields[key]||'').trim())).size>1) errors.push(`El dato ${key} debe coincidir en todo el reporte.`);
@@ -34,7 +34,7 @@ export async function prepare(draft) {
     const ref=(fields.certificateNumber||fields.reportNumber||fields.bhaNumber).toUpperCase();
     const date=fields.inspectionDate||fields.repairDate||fields.bhaDate;
     const id=await digest(JSON.stringify([draft.type,(fields.issuer||'').toUpperCase(),ref,serial,date,fields.well||'']));
-    events.push({...eventCreator(draft.type,{...record,serial,fields},draft.id,id,at),sourceEventId:record.sourceEventId||''});
+    events.push({...eventCreator(draft.type,{...record,serial,fields,template:record.template||draft.template},draft.id,id,at),sourceEventId:record.sourceEventId||''});
   }
   const document={id:draft.id,name:draft.name,type:draft.type,template:draft.template||'GENERIC_REVIEW',sha256:draft.id,recordCount:events.length,createdAt:at,storage:'LOCAL_DEVICE',reviewed:true,validationMode:draft.validationMode||'automatic',eventIds:events.map(e=>e.id),revision:1};
   const bha=draft.type==='BHA'?{id:draft.id,documentId:draft.id,number:events[0].fields.bhaNumber,well:events[0].fields.well,phase:events[0].fields.phase,date:events[0].date,createdAt:at}:null;
