@@ -6,7 +6,8 @@ export function matrixValidator(type,record) {
   const errors=[];const f=record.fields||{};
   if(!required[type]) return ['Seleccione un tipo documental válido.'];
   if(!validSerial(serialNormalizer(record.serial))) errors.push('Serial inválido (3–64 caracteres y al menos un dígito).');
-  for(const key of required[type]) if(!String(f[key]||'').trim()||/^(---|varios)$/i.test(f[key])) errors.push(`Falta completar: ${key}.`);
+  const optional=type==='INSPECTION'?(record.template==='NOV_TUBOSCOPE_HW_INSPECTION'?['formatCode','formatVersion','versionDate','body']:record.template==='SAIS_PREMIUM_HW'?['issueDate']:[]):[];
+  for(const key of required[type].filter(k=>!optional.includes(k))) if(!String(f[key]||'').trim()||/^(---|varios)$/i.test(f[key])) errors.push(`Falta completar: ${key}.`);
   for(const key of ['versionDate','inspectionDate','issueDate','repairDate','bhaDate']) if(f[key]&&normalizeDate(f[key])!==f[key]) errors.push(`Fecha inválida: ${key}.`);
   if(type==='INSPECTION'&&f.finalConformity&&!states.includes(f.finalConformity)) errors.push('Conformidad no válida.');
   if(f.inspectionDate&&f.issueDate&&f.issueDate<f.inspectionDate) errors.push('La emisión no puede preceder a la inspección.');
