@@ -3,7 +3,7 @@ import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPa
 import {getFirestore,collection,getDocs,doc,runTransaction,connectFirestoreEmulator,setDoc,deleteDoc,writeBatch} from 'firebase/firestore';
 import {scheduleEntry} from '../engine/calendar.js';
 import {firebaseConfig,useEmulators} from '../config.js';
-import {prepare,applyCommit,collectionNames,emptyState} from './repository.js';
+import {prepare,applyCommit,applyDocumentRemoval,collectionNames,emptyState} from './repository.js';
 import {projectPath,initialProject,newProject,DEFAULT_PROJECT} from './projects.js';
 export const configured=Boolean(firebaseConfig.apiKey&&firebaseConfig.projectId&&firebaseConfig.appId);
 const app=configured?initializeApp(firebaseConfig):null;
@@ -16,6 +16,24 @@ export class FirebaseRepository {
   async load(){const names=[...collectionNames,'scheduledEvents'];const sets=await Promise.all(names.map(n=>getDocs(collection(db,...this.path,n))));return Object.fromEntries(names.map((n,i)=>[n,sets[i].docs.map(d=>d.data())]));}
   async saveSchedule(input){const entry=scheduleEntry(input);await setDoc(this.ref('scheduledEvents',entry.id),entry);return entry;}
   async deleteSchedule(id){await deleteDoc(this.ref('scheduledEvents',id));}
+  async deleteDocument(id,options={}){
+    if(!navigator.onLine)throw new Error('Conéctate a internet para eliminar el documento.');
+    const seed=(await getDocs(collection(db,...this.path,'events'))).docs.map(d=>d.data());
+    return runTransaction(db,async tx=>{
+      const current=emptyState(),cache=new Map();
+      const read=async(name,id)=>{const key=name+'/'+id;if(!cache.has(key)){const snap=await tx.get(this.ref(name,id));cache.set(key,snap.exists()?snap.data():null);}return cache.get(key);};
+      if((await read('settings','maintenance'))?.deleting)throw new Error('El proyecto está en mantenimiento. Intenta de nuevo al terminar.');
+      const document=await read('documents',id);if(document)current.documents.push(document);
+      const ownIds=new Set([...(document?.eventIds||[]),...seed.filter(e=>e.documentId===id).map(e=>e.id)]),allIds=new Set(ownIds),serials=new Set();
+      for(const eventId of ownIds){const event=await read('events',eventId);if(event)serials.add(event.serial);}
+      for(const serial of serials){const tool=await read('tools',serial);if(tool)current.tools.push(tool);for(const eventId of tool?.eventIds||seed.filter(e=>e.serial===serial).map(e=>e.id))allIds.add(eventId);}
+      for(const eventId of allIds){const event=await read('events',eventId);if(event)current.events.push(event);}
+      const bha=await read('bha',id);if(bha)current.bha.push(bha);
+      for(const eventId of ownIds){const member=await read('bhaMembers',eventId);if(member)current.bhaMembers.push(member);}
+      const result=applyDocumentRemoval(current,id,options);
+      for(const write of result.writes)if(write.remove)tx.delete(this.ref(write.name,write.id));else tx.set(this.ref(write.name,write.id),write.value);
+    });
+  }
   async clearAll({deletingProject=false}={}){
     if(!navigator.onLine)throw new Error('Conéctate a internet para borrar los datos de la cuenta.');
     await setDoc(this.ref('settings','maintenance'),{deleting:true});
