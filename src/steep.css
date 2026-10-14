@@ -19,3 +19,21 @@ label{color:#626670;font-size:12px}input,select,textarea{background:#f2f2f3;bord
 
 /* Identidad ToolTrace y crédito del desarrollador */
 .brand-logo{width:44px;height:44px;object-fit:cover;border-radius:12px;flex:none;border:1px solid #e8e4da}.auth-story .brand-logo{width:56px;height:56px;border-radius:16px}.developer-credit{display:flex;align-items:center;justify-content:center;gap:10px;max-width:1280px;margin:48px auto 0;padding:16px 20px 20px;color:#777b86;font:400 11px var(--font-sohne);border-top:1px solid #ececec}.developer-credit img{height:48px;width:66px;object-fit:contain}.auth{min-height:calc(100svh - 100px)}#app>.developer-credit{margin-top:0;max-width:1160px}@media(max-width:720px){.brand-logo{width:38px;height:38px;border-radius:10px}.developer-credit{margin-top:32px;padding-bottom:16px}.developer-credit img{height:42px;width:58px}}
+
+/* Color por función, conservando el diseño editorial Steep. */
+:root{--accent:#21635b;--inspection:#2563c4;--repair:#138468;--bha:#8056c7;--danger:#a73346}
+body{background:#fbfcfd}.factory-topbar{background:#fffffff5;backdrop-filter:blur(12px)}.layout main{color:#20302f}
+.primary,.auth-form .primary{background:#21635b;border-color:#21635b;color:#fff}.primary:hover,.auth-form .primary:hover{background:#174c46;border-color:#174c46}
+.factory-topbar nav button.active{background:#e4f2ec!important;color:#1d5b46!important}.factory-topbar nav button:hover{background:#edf6f1;color:#1d5b46}
+.metrics article:nth-child(1){background:#eaf2ff;border-top:3px solid #7da6ec}.metrics article:nth-child(1) strong{color:#2456a0}
+.metrics article:nth-child(2){background:#e8f5ed;border-top:3px solid #72b995}.metrics article:nth-child(2) strong{color:#236346}
+.metrics article:nth-child(3){background:#f0ebfc;border-top:3px solid #b099db}.metrics article:nth-child(3) strong{color:#6a469e}
+.metrics article:nth-child(4){background:#fff0e6;border-top:3px solid #e7a579}.metrics article:nth-child(4) strong{color:#9a4d26}
+.metrics article>span{color:#43545f}.project-bar{background:#eaf3ef}.project-bar label{color:#365c52}.panel{background:#fff;border:1px solid #edf0f3}
+.filter-tabs button[aria-pressed=true]{background:#21635b!important;color:#fff!important}.filter-tabs button:not([aria-pressed=true]):hover{background:#eaf3ef}
+.badge.success{background:#e1f3e8!important;color:#206044!important;border-color:#bde2cb!important}.badge.warning{background:#fff1d6!important;color:#86520b!important;border-color:#f1d79f!important}.badge.danger{background:#ffe8ed!important;color:#9a2d41!important;border-color:#efc0ca!important}.badge.neutral{background:#edf1f5!important;color:#4a5d70!important}.group-badge{background:#f0eaf9;color:#6c4996;border-color:#dfd2ef}
+.document-type{display:inline-flex;align-items:center;border-radius:999px;padding:6px 11px;font-size:12px;white-space:nowrap;background:#edf1f5;color:#536475}.type-INSPECTION{background:#eaf2ff;color:#2259aa}.type-REPAIR{background:#e1f3e9;color:#206647}.type-BHA{background:#f1eafb;color:#7046a8}
+.serial-link,.document-link{color:#225b99}.serial-link:hover,.document-link:hover{color:#194473}.attention-bar{background:#fff4dc;color:#7c5513}.progress-strip{background:#e7f3f0;color:#205e52}
+.delete-document-button{color:#a73346!important}.delete-document-button:hover{background:#fff0f2!important}.secondary.danger-button{background:#fff0f2!important;color:#9c3044!important;border:1px solid #efced5!important}.primary.danger-button{background:#a73346!important;color:#fff!important;border-color:#a73346!important}.primary.danger-button:hover{background:#872638!important}
+.calendar-day[aria-pressed=true]{background:#21635b;border-color:#21635b;color:#fff}.calendar-day.today b{text-decoration-color:#d98a4a}.calendar-event{border-left-color:#a1b8d4}.document-flow>div:nth-child(1){background:#eaf2ff}.document-flow>div:nth-child(2){background:#f0ebfc}.document-flow>div:nth-child(3){background:#e8f5ed}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-color:#21635b}.dropzone{background:#fff0e6}.dropzone.dragging{background:#fce2cf}.auth-form{background:#edf3f2}.auth-story .story-card{background:#fff0e4}#notice{background:#214b47}.developer-credit{border-color:#e2e9e6}
