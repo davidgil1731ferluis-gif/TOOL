@@ -22,7 +22,7 @@ service cloud.firestore {
    allow delete: if owner(uid);
    allow create, update: if writable(uid) && request.resource.data.id == id && validSerial(request.resource.data.serial) && request.resource.data.toolId == request.resource.data.serial && validDate(request.resource.data.date) && (
     (request.resource.data.type == 'REPAIR' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.reportNumber.size() > 0 && request.resource.data.fields.workOrder.size() > 0 && request.resource.data.fields.repairDate == request.resource.data.date) ||
-    (request.resource.data.type == 'INSPECTION' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.certificateNumber.size() > 0 && request.resource.data.fields.formatCode.size() > 0 && request.resource.data.fields.finalConformity in ['CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'] && request.resource.data.fields.inspectionDate == request.resource.data.date) ||
+    (request.resource.data.type == 'INSPECTION' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.certificateNumber.size() > 0 && (request.resource.data.fields.formatCode.size() > 0 || request.resource.data.get('template','') == 'NOV_TUBOSCOPE_HW_INSPECTION') && request.resource.data.fields.finalConformity in ['CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'] && request.resource.data.fields.inspectionDate == request.resource.data.date) ||
     (request.resource.data.type == 'BHA' && request.resource.data.fields.bhaNumber.size() > 0 && request.resource.data.fields.well.size() > 0 && request.resource.data.fields.bhaDate == request.resource.data.date));
   }
   match /users/{uid}/bha/{id} {
@@ -64,7 +64,7 @@ service cloud.firestore {
    allow delete: if owner(uid);
    allow create, update: if writableProject(uid,projectId) && request.resource.data.id == id && validSerial(request.resource.data.serial) && request.resource.data.toolId == request.resource.data.serial && validDate(request.resource.data.date) && (
     (request.resource.data.type == 'REPAIR' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.reportNumber.size() > 0 && request.resource.data.fields.workOrder.size() > 0 && request.resource.data.fields.repairDate == request.resource.data.date) ||
-    (request.resource.data.type == 'INSPECTION' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.certificateNumber.size() > 0 && request.resource.data.fields.formatCode.size() > 0 && request.resource.data.fields.finalConformity in ['CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'] && request.resource.data.fields.inspectionDate == request.resource.data.date) ||
+    (request.resource.data.type == 'INSPECTION' && request.resource.data.fields.issuer.size() > 0 && request.resource.data.fields.certificateNumber.size() > 0 && (request.resource.data.fields.formatCode.size() > 0 || request.resource.data.get('template','') == 'NOV_TUBOSCOPE_HW_INSPECTION') && request.resource.data.fields.finalConformity in ['CONFORME','NO_CONFORME_REPARABLE','NO_CONFORME_FUERA_SERVICIO'] && request.resource.data.fields.inspectionDate == request.resource.data.date) ||
     (request.resource.data.type == 'BHA' && request.resource.data.fields.bhaNumber.size() > 0 && request.resource.data.fields.well.size() > 0 && request.resource.data.fields.bhaDate == request.resource.data.date));
   }
   match /bha/{id} {
