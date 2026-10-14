@@ -14,10 +14,12 @@ export function premiumInspectionCells(items,text){
   const columns={body:head('CONDICION'),pin:head('CONDICION FINAL PIN'),box:head('CONDICION CAJA'),finalConformity:head('CONDICION FINAL')};
   // La primera CONDICIÓN pertenece al CENTRO, antes del bloque PIN.
   columns.body=items.filter(i=>normalizedText(i.str.trim())==='CONDICION'&&i.transform[5]>header.transform[5]-30).sort((a,b)=>a.transform[4]-b.transform[4])[0];
+  const bodyLight=items.filter(i=>normalizedText(i.str.trim())==='LUZ NEGRA'&&i.transform[5]>header.transform[5]-30&&i.transform[5]<header.transform[5]).sort((a,b)=>a.transform[4]-b.transform[4])[0];
   const observations=items.find(i=>i.str.trim()==='OBSERVACIONES'&&Math.abs(i.transform[5]-header.transform[5])<10);
   return items.filter(i=>validSerial(serialNormalizer(i.str))&&Math.abs(center(i)-center(header))<header.width*.6&&i.transform[5]<header.transform[5]-15&&items.some(n=>/^\d+$/.test(n.str.trim())&&n.transform[4]<i.transform[4]&&Math.abs(n.transform[5]-i.transform[5])<2)).map(i=>{
     const row=items.filter(v=>v.str.trim()&&Math.abs(v.transform[5]-i.transform[5])<2).sort((a,b)=>a.transform[4]-b.transform[4]),cells={};
     for(const [key,h] of Object.entries(columns)){if(!h)continue;const values=row.filter(v=>Math.abs(center(v)-center(h))<h.height*1.5);cells[key]=result(values.map(v=>v.str.trim()).join(' '));}
+    if(bodyLight&&row.filter(v=>Math.abs(center(v)-center(bodyLight))<bodyLight.height*1.5).map(v=>v.str.trim()).join(' ')!=='OK')cells.body='';
     const note=observations?row.filter(v=>v.transform[4]>observations.transform[4]-4).map(v=>v.str.trim()).join(' '):'';
     cells.findings=note;cells.observations=note;
     cells.measurements=row.filter(v=>v.transform[4]>i.transform[4]+i.width).map(v=>v.str.trim()).join(' | ');
