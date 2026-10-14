@@ -48,6 +48,8 @@ Publica las reglas actualizadas de `firestore.rules` para permitir los reportes 
 
 ## Carga y edición
 
+- **Eliminar**, en cada fila de Documentos o dentro de un reporte, quita únicamente ese documento del proyecto activo. Pide escribir ELIMINAR antes de confirmar. Elimina sus eventos y sus miembros BHA, recalcula el estado de las herramientas con los eventos restantes y retira las fichas que ya no tengan historial. Conserva los demás reportes y la agenda; elimina también el PDF y el pendiente locales de ese dispositivo. El borrado de un reporte guardado en Firebase es transaccional, requiere conexión y rechaza revisiones obsoletas. Una vez eliminado, el mismo PDF puede volver a cargarse.
+- **Colores:** azul para inspecciones, verde para reparaciones y violeta para BHA, compartidos entre etiquetas, gráfico y calendario. Los indicadores usan superficies suaves de esos colores; las acciones principales usan verde petróleo y los avisos conservan ámbar o rojo según su función. Se mantienen el diseño Steep, los logotipos, los textos de estado y la preferencia de movimiento reducido.
 - Carga individual o masiva con **validación y guardado automático**. Al finalizar, los reportes completos aparecen en Documentos y en el resumen por serial. No hay casillas de confirmación individual.
 - Solo los archivos con datos faltantes, inconsistencias o errores quedan **Por completar**. Todos sus PDFs y cambios pendientes se conservan localmente.
 - **Editar** permite cambiar los datos de un reporte guardado, incluyendo fechas y seriales. Una sola acción guarda todo el reporte. Se recalculan los historiales y los estados afectados; se actualizan también la cabecera y los miembros BHA.
