@@ -2,6 +2,7 @@ import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {pdfLines,bhaColumnCandidates} from './pdfLines.js';
 import {inspectionCells} from './inspectionCells.js';
+import {premiumInspectionCells,tuboscopeInspectionCells} from './inspectionFormats.js';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 export async function textExtractor(file) {
   if (file.size > 25 * 1024 * 1024) throw new Error('El PDF supera 25 MB.');
@@ -15,7 +16,8 @@ export async function textExtractor(file) {
     for(let n=1;n<=pdf.numPages;n++) {
       const content = await (await pdf.getPage(n)).getTextContent();
       // Agrupar por coordenada vertical; conserva filas aunque PDF.js no emita saltos.
-      pages.push({page:n,text:pdfLines(content.items),bhaCandidates:bhaColumnCandidates(content.items),inspectionCandidates:inspectionCells(content.items)});
+      const text=pdfLines(content.items);
+      pages.push({page:n,text,bhaCandidates:bhaColumnCandidates(content.items),inspectionCandidates:inspectionCells(content.items)||premiumInspectionCells(content.items,text)||tuboscopeInspectionCells(text)});
     }
     const text=pages.map(p=>p.text).join('\n\n');
     if(text.trim().length<40) throw new Error('PDF sin texto utilizable. Esta versión requiere texto seleccionable; OCR está pendiente.');
