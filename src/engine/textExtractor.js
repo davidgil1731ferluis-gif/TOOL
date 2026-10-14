@@ -1,12 +1,12 @@
 import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import {pdfLines,bhaColumnCandidates} from './pdfLines.js';
+import {pdfLines,bhaColumnCandidates,coalescePdfItems} from './pdfLines.js';
 import {inspectionCells} from './inspectionCells.js';
 import {premiumInspectionCells,tuboscopeInspectionCells} from './inspectionFormats.js';
 import {fileKind,decodeText} from './fileFormats.js';
 import {coordinateTable} from './coordinateTable.js';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-export const EXTRACTION_VERSION=2;
+export const EXTRACTION_VERSION=3;
 export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPage=async()=>{}}={}) {
   if (file.size > 25 * 1024 * 1024) throw new Error('El archivo supera 25 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -24,7 +24,7 @@ export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPag
     for(let n=1;n<=pdf.numPages;n++) {
       const cached=cachedPages.find(p=>p.page===n&&p.method);if(cached){pages.push(cached);continue;}
       onProgress(`Leyendo página ${n} de ${pdf.numPages}`);
-      const pdfPage=await pdf.getPage(n);const content = await pdfPage.getTextContent();
+      const pdfPage=await pdf.getPage(n);const content = await pdfPage.getTextContent();content.items=coalescePdfItems(content.items);
       // Agrupar por coordenada vertical; conserva filas aunque PDF.js no emita saltos.
       const text=pdfLines(content.items);
       if(text.replace(/\s/g,'').length<80){

@@ -1,5 +1,12 @@
 import {serialNormalizer,validSerial} from './serialNormalizer.js';
+export function coalescePdfItems(items){
+ const text=items.filter(i=>i.str?.trim());if(text.length<80||text.filter(i=>i.str.trim().length===1).length/text.length<.55)return items;
+ const rows=[],vertical=[];
+ for(const item of text){if(Math.abs(item.transform[1])>Math.abs(item.transform[0])){vertical.push(item);continue;}const y=item.transform[5],tolerance=Math.max(.35,item.height*.15);let row=rows.find(r=>Math.abs(r.y-y)<tolerance);if(!row){row={y,items:[]};rows.push(row);}row.items.push(item);}
+ return [...rows.sort((a,b)=>b.y-a.y).flatMap(row=>{const result=[];for(const item of row.items.sort((a,b)=>a.transform[4]-b.transform[4])){const previous=result.at(-1),gap=previous?item.transform[4]-(previous.transform[4]+previous.width):Infinity,limit=Math.max(.12,Math.min(previous?.height||item.height,item.height)*.18);if(previous&&gap<=limit&&gap>=-item.height*.35){previous.str+=item.str;previous.width=item.transform[4]+item.width-previous.transform[4];}else result.push({...item,transform:[...item.transform]});}return result;}),...vertical];
+}
 export function pdfLines(items) {
+  items=coalescePdfItems(items);
   const lines=[];
   for(const item of items.filter(i=>i.str)) {
     const y=item.transform[5];let line=lines.find(l=>Math.abs(l.y-y)<2.5);
@@ -9,6 +16,7 @@ export function pdfLines(items) {
   return lines.sort((a,b)=>b.y-a.y).map(l=>l.items.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n');
 }
 export function bhaColumnCandidates(items) {
+  items=coalescePdfItems(items);
   if(!items.some(i=>/COMPONENTES BHA/i.test(i.str))) return null;
   const header=items.find(i=>i.str.trim()==='Serial');
   const exterior=items.find(i=>i.str.trim()==='Externo'&&header&&Math.abs(i.transform[5]-header.transform[5])<20);

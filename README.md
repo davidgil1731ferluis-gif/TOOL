@@ -214,3 +214,16 @@ Fondo #101010, navegación superior, paneles neutros, tarjeta clara principal, t
 - La hoja principal del Excel conserva una fila por serial y bloques horizontales cronológicos. Cada bloque tiene seis columnas: Fecha, Tipo, Empresa, Reporte, Resultado y Detalles clave. Se omiten estado actual, conteos, identificadores internos, versiones y metadatos técnicos en esta vista. No se añade un resumen duplicado. Las hojas Inspecciones, Reparaciones y BHA mantienen los datos completos y fuentes.
 - Detalles clave: cuerpo/PIN/BOX/hallazgos de inspección; orden/PIN/BOX/maquinado de reparación; pozo/fase en BHA. Observaciones y otros campos permanecen en las hojas detalladas. El ejemplo contiene 77 herramientas y 121 eventos en 20 columnas principales.
 - Entradas suaves de paneles, respuesta de botones y calendario, dibujo de líneas y tarjetas animadas, conservando Steep. Se desactivan con la preferencia de movimiento reducido.
+
+
+## Catálogo y extracción ampliada (octubre de 2026)
+
+En **Herramientas → Nuevo grupo** define nombre y color. Usa **Nueva herramienta** para registrar serial, tipo y grupo; **Editar** permite reasignar un serial existente. Los grupos pertenecen al proyecto actual. La asignación manual prevalece sobre la clasificación automática HWDP y se conserva en nuevas importaciones, fichas, filtros y Excel. Registrar una herramienta no inventa un evento ni un estado técnico.
+
+**Eliminar** pide escribir ELIMINAR. Quita el serial y sus eventos; un reporte compartido conserva los demás seriales y su original, y actualiza cantidad/revisión. Si no quedan seriales, se elimina ese reporte. La agenda se conserva. El conteo declarado del original queda auditado junto con los seriales excluidos. Los grupos, registros y eliminaciones también se guardan sin conexión y se sincronizan por orden al volver a internet. Si otro dispositivo modifica el historial antes de borrar, se recupera la versión en línea para revisarla y confirmar de nuevo.
+
+Documentos muestra junto a Eliminar la fecha real del evento. Si hay varias fechas, muestra el intervalo y el número de fechas; el detalle completo aparece al acercar el cursor. No utiliza la fecha de subida como sustituto. El gráfico diferencia inspecciones en azul, reparaciones en naranja y BHA en rosa, conservando trazos distintos.
+
+El lector PDF reconstruye letras sueltas mediante sus coordenadas y separa correctamente las columnas Cuerpo/PIN/BOX/Conformidad de tablas TOTAL QC anchas. La versión de extracción se incrementó: los pendientes se pueden volver a analizar desde sus originales. Los reportes ya guardados se conservan y pueden corregirse desde Editar. Los formatos desconocidos o datos dudosos siguen requiriendo revisión; no se garantiza reconocer automáticamente cualquier diseño futuro.
+
+Las nuevas colecciones `toolGroups` y `syncReceipts` requieren publicar `firestore.rules` antes del frontend. Los recibos permiten reintentar una eliminación ya aceptada sin borrar una carga posterior del mismo serial. Se incluyen en el vaciado de proyecto. No contienen archivos ni credenciales.

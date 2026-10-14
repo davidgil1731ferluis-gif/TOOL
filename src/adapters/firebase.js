@@ -1,3 +1,4 @@
+import {groupEntry,toolEntry,applyToolRemoval} from '../engine/toolCatalog.js';
 import {initializeApp} from 'firebase/app';
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,onAuthStateChanged,signOut,connectAuthEmulator,reload} from 'firebase/auth';
 import {getFirestore,collection,getDocsFromServer as getDocs,doc,runTransaction,connectFirestoreEmulator,setDoc,deleteDoc,writeBatch} from 'firebase/firestore';
@@ -14,6 +15,29 @@ export class FirebaseRepository {
   constructor(uid,project=DEFAULT_PROJECT){this.uid=uid;this.path=projectPath(uid,project);}
   ref(name,id){return doc(db,...this.path,name,id);}
   async load(){const names=[...collectionNames,'scheduledEvents'];const sets=await Promise.all(names.map(n=>getDocs(collection(db,...this.path,n))));return Object.fromEntries(names.map((n,i)=>[n,sets[i].docs.map(d=>d.data())]));}
+  async saveGroup(input){const entry=groupEntry(input);return runTransaction(db,async tx=>{const ref=this.ref('toolGroups',entry.id),old=await tx.get(ref);if(old.exists()){if(old.data().name===entry.name&&old.data().color===entry.color)return old.data();throw new Error('Ese grupo ya existe.');}tx.set(ref,entry);return entry;});}
+  async saveTool(input){return runTransaction(db,async tx=>{const ref=this.ref('tools',input.serial),old=await tx.get(ref),state=emptyState();if(!['HWDP','OTRAS'].includes(input.groupId)){const group=await tx.get(this.ref('toolGroups',input.groupId));if(group.exists())state.toolGroups.push(group.data());}const entry=toolEntry(old.exists()?old.data():null,input,state);tx.set(ref,entry);return entry;});}
+  async deleteTool(serial,options={}){
+    // Los IDs se descubren fuera de la transacción; sus versiones se vuelven a leer dentro.
+    const seed=(await getDocs(collection(db,...this.path,'events'))).docs.map(d=>d.data());
+    return runTransaction(db,async tx=>{
+      const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;
+      if(receipt&&(await tx.get(receipt)).exists())return;
+      const current=emptyState(),cache=new Map();
+      const read=async(name,id)=>{const key=name+'/'+id;if(!cache.has(key)){const snap=await tx.get(this.ref(name,id));cache.set(key,snap.exists()?snap.data():null);}return cache.get(key);};
+      if((await read('settings','maintenance'))?.deleting)throw new Error('El proyecto está en mantenimiento.');
+      const tool=await read('tools',serial);if(tool)current.tools.push(tool);
+      const ownIds=new Set([...(tool?.eventIds||[]),...seed.filter(e=>e.serial===serial).map(e=>e.id)]),docIds=new Set((options.snapshot?.documents||[]).map(d=>d.id)),allIds=new Set(ownIds);
+      for(const id of ownIds){const event=await read('events',id);if(event)docIds.add(event.documentId);}
+      for(const id of docIds){const document=await read('documents',id);if(document){current.documents.push(document);for(const eventId of document.eventIds||seed.filter(e=>e.documentId===id).map(e=>e.id))allIds.add(eventId);}const bha=await read('bha',id);if(bha)current.bha.push(bha);}
+      for(const id of allIds){const event=await read('events',id);if(event)current.events.push(event);}
+      for(const id of ownIds){const member=await read('bhaMembers',id);if(member)current.bhaMembers.push(member);}
+      const result=applyToolRemoval(current,serial,options);
+      for(const w of result.writes)if(w.remove)tx.delete(this.ref(w.name,w.id));else tx.set(this.ref(w.name,w.id),w.value);
+      if(receipt)tx.set(receipt,{id:options.operationId,serial,createdAt:new Date().toISOString()});
+      return {affectedDocumentIds:result.affectedDocumentIds,removedDocumentIds:result.removedDocumentIds};
+    });
+  }
   async saveSchedule(input){const entry=scheduleEntry(input);await setDoc(this.ref('scheduledEvents',entry.id),entry);return entry;}
   async deleteSchedule(id){await deleteDoc(this.ref('scheduledEvents',id));}
   async deleteDocument(id,options={}){
@@ -40,7 +64,7 @@ export class FirebaseRepository {
     await setDoc(this.ref('settings','maintenance'),{deleting:true});
     // El bloqueo impide nuevas escrituras durante un borrado de varios lotes.
     // Si falla, se conserva el bloqueo y el usuario puede reintentar la limpieza.
-    for(const name of [...collectionNames,'scheduledEvents']){const snapshot=await getDocs(collection(db,...this.path,name));for(let i=0;i<snapshot.docs.length;i+=400){const batch=writeBatch(db);for(const d of snapshot.docs.slice(i,i+400))batch.delete(d.ref);await batch.commit();}}
+    for(const name of [...collectionNames,'scheduledEvents','syncReceipts']){const snapshot=await getDocs(collection(db,...this.path,name));for(let i=0;i<snapshot.docs.length;i+=400){const batch=writeBatch(db);for(const d of snapshot.docs.slice(i,i+400))batch.delete(d.ref);await batch.commit();}}
     if(!deletingProject)await setDoc(this.ref('settings','maintenance'),{deleting:false});
   }
   async save(draft,options={}) {
