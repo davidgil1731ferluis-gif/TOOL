@@ -8,13 +8,24 @@ El selector **Proyecto** permite cambiar de lugar de trabajo y **Nuevo proyecto*
 
 Los datos anteriores se muestran como **Proyecto principal**, conservando sus rutas y archivos originales. No se copian ni se borran para activar esta función. Los nuevos proyectos usan `users/{uid}/projects/{projectId}` con las colecciones operativas dentro. El proyecto principal conserva `users/{uid}/{collection}` para que las sesiones anteriores sigan siendo compatibles. Los documentos de proyecto guardan solo id, nombre y fecha de creación.
 
-**Eliminar datos** vacía únicamente el proyecto seleccionado y conserva los demás. Se mantiene la doble confirmación; no elimina la cuenta ni el nombre del proyecto. No se incluye todavía traslado de documentos entre proyectos, renombrado o eliminación del proyecto completo.
+**Eliminar datos** vacía únicamente el proyecto seleccionado y conserva los demás. **Eliminar proyecto** elimina también el nombre del selector, con doble confirmación. El proyecto principal se puede vaciar y permanece como espacio inicial. No se incluye todavía traslado de documentos entre proyectos ni renombrado.
 
 Actualiza `firestore.rules` antes de desplegar esta versión. Los proyectos siguen siendo privados por cuenta y requieren correo verificado. Los PDFs permanecen en el navegador donde se cargaron, separados también por proyecto.
 
 ## Publicar en producción
 
 Sigue [PRODUCCION.md](PRODUCCION.md) para configurar Firebase y publicar mediante GitHub Pages. Resumen contiene solo indicadores y gráfico; Herramientas y Documentos tienen sus propias pantallas. Todos los campos del Excel están centrados horizontal y verticalmente, con bordes finos en cada celda.
+
+## Reconocimiento de formatos de inspección
+
+- TOTAL QC FT-END-003: mantiene la lectura por celdas, incluyendo textos en varias líneas.
+- SAIS-OP-F-53R Heavy Weight Premium: lee las columnas verticales de cuerpo, PIN, caja y condición final; interpreta OP, R y FS según la leyenda del formato. Conserva reporte, OIT, versión, vigencia, fecha, norma, descripción, conexión y datos de la fila. La fecha de emisión permanece vacía si no está publicada.
+- NOV Tuboscope Heavyweight: usa la hoja de recuento como lista de seriales y enlaza las hojas de mediciones y observaciones por serial. Las páginas de maquinado requerido pertenecen a la inspección, no crean reparaciones realizadas. La conformidad se obtiene de los resultados PIN/BOX únicamente cuando concuerdan con los conteos del resumen y sus códigos son reconocidos. Si hay discrepancias o códigos desconocidos, el documento queda por completar. El código/versión del formato y el cuerpo individual permanecen vacíos si el reporte no los informa.
+- Otros diseños con texto seleccionable: clasificación por títulos y extracción adicional mediante etiquetas habituales en español e inglés. Esto no garantiza reconocer cualquier disposición; los datos ambiguos o insuficientes quedan pendientes. Los PDFs escaneados sin texto seleccionable todavía requieren OCR.
+- **Documentos → Reanalizar pendientes** vuelve a leer juntos los PDFs disponibles de ese proyecto, previa confirmación de que reemplazará los datos pendientes. Los reportes ya guardados se conservan. Se debe usar el dispositivo donde se cargaron los originales.
+- **Historial por herramienta** ordena todos los seriales alfabéticamente, independientemente del grupo. Cada fila conserva los eventos de esa herramienta del más antiguo al más reciente, en bloques horizontales. Las hojas de inspección incluyen también los nuevos datos del formato.
+
+Publica las reglas actualizadas de `firestore.rules` para permitir los reportes Tuboscope que no publican un código de formato: `firebase deploy --only firestore:rules --project tooltracker-d3140`. Usa la cuenta propietaria de ese proyecto; si tu sesión de la herramienta pertenece a otra cuenta, ejecuta `firebase login:add` y selecciona la cuenta correcta con `--account` en el despliegue.
 
 ## Calendario, historial y limpieza
 
