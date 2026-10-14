@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 10590)
-Total output lines: 180
-
 import './views/chartInteraction.js';
 import {chartView,calendarView,scheduleForm,localDay} from './views/calendarViews.js';
 import './style.css';
@@ -62,7 +59,29 @@ function recordCard(r,i,d){const errors=matrixValidator(d.type,{...r,template:d.
 function editorView(){const d=editor;const defs=fieldDefinitions[d.type]||[];const common=d.records[0]?.fields||d.commonFields||{};return `<button class="subtle" data-action="close-editor">← Documentos</button>`+heading(d.existing?'Editar reporte':'Completar documento',`<button class="secondary" data-pdf="${esc(d.id)}">Ver PDF</button>`,esc(d.name))+`<section class="panel">${!d.existing?`<label>Tipo<select id="type">${['UNKNOWN','INSPECTION','REPAIR','BHA'].map(t=>`<option value="${t}" ${d.type===t?'selected':''}>${labels[t]}</option>`).join('')}</select></label>`:''}<div class="fields">${defs.filter(([key])=>(commonKeys[d.type]||[]).includes(key)).map(def=>inputField(def,common[def[0]]||'',0,true)).join('')}</div>${d.error?`<p class="callout danger">${esc(humanError(d.error))}</p>`:''}<div id="document-validation" class="validation" ${documentErrors(d).length?'':'hidden'}>${esc(humanError(documentErrors(d).slice(0,4).join(' ')))}</div></section>${d.records.map((r,i)=>recordCard(r,i,d)).join('')}<div class="review-actions"><button class="secondary" data-action="add" ${d.type==='UNKNOWN'?'disabled':''}>+ Agregar serial</button><button class="primary" data-action="save" ${busy?'disabled':''}>${d.existing?'Guardar cambios':'Guardar reporte'}</button></div>`;}
 function render(){if(!user){root.innerHTML=authView()+developerCredit();return;}if(!demo&&!user.emailVerified){root.innerHTML=`<section class="verify panel"><h1>Verifica tu correo</h1><p>${esc(user.email)}</p><button class="primary" data-action="refresh">Ya verifiqué mi correo</button><button class="secondary" data-action="verify">Reenviar enlace</button><button class="subtle" data-action="logout">Cerrar sesión</button></section>${developerCredit()}`;return;}root.innerHTML=shell(editor?editorView():detail?detailView():reportId?reportView():page==='upload'?upload():page==='tools'?toolsView():page==='documents'?documentsView():page==='calendar'?calendarView(data,calendarMonth,selectedDay):dashboard());}
 async function persist(entry){await archive.put(owner(),entry);}
-function savePendingEdit(){if(!editor||editor.existing)return;const entry=structuredClone({...editor,status:'needs_attention',error:''});delete entry.existing;delete entry.baseRevision;const i=inbox.findIndex(x=>x.id===entry.id);inbox[i]=entry;const account=owner();pendingWrite=pendin…590 tokens truncated… se pudieron abrir los proyectos. '+error.message);render();}
+function savePendingEdit(){if(!editor||editor.existing)return;const entry=structuredClone({...editor,status:'needs_attention',error:''});delete entry.existing;delete entry.baseRevision;const i=inbox.findIndex(x=>x.id===entry.id);inbox[i]=entry;const account=owner();pendingWrite=pendingWrite.then(()=>archive.put(account,entry)).catch(e=>notify('No se pudo conservar el cambio: '+e.message));}
+async function refreshData(){data=await repo.load();for(const entry of inbox){if(data.documents.some(d=>d.id===entry.id)&&entry.status!=='saved'){entry.status='saved';entry.error='';await persist(entry);}}}
+async function openProject(id){
+  if(!projects.some(p=>p.id===id))throw new Error('El proyecto no está disponible.');
+  const token=++epoch;busy=true;progress='Abriendo proyecto…';await pendingWrite;cleanup();activeProject=id;
+  localStorage.setItem('tooltrace-active-project:'+accountId(),id);
+  repo=demo?new DemoRepository(id):new FirebaseRepository(user.uid,id);
+  data=emptyState();inbox=[];failures=[];editor=null;detail='';reportId='';search='';groupFilter='ALL';documentFilter='ALL';page='dashboard';calendarMonth=localDay().slice(0,7);selectedDay=localDay();render();
+  const account=owner();
+  try{const [saved,localEntries]=await Promise.allSettled([repo.load(),archive.list(account)]);if(token!==epoch)return;
+    if(saved.status==='fulfilled')data=saved.value;else notify('No se pudo sincronizar: '+saved.reason.message);
+    if(localEntries.status==='fulfilled')inbox=localEntries.value;else notify('No se pudo abrir el archivo local: '+localEntries.reason.message);
+    for(const entry of inbox)if(data.documents.some(d=>d.id===entry.id)){entry.status='saved';entry.error='';}
+  }finally{if(token===epoch){busy=false;progress='';render();}}
+  if(token===epoch&&inbox.some(e=>e.status==='queued'||e.status==='waiting'))await processQueue();
+}
+async function activate(current,local=false){
+  ++epoch;user=current;demo=local;projects=[initialProject()];activeProject=DEFAULT_PROJECT;data=emptyState();inbox=[];editor=null;detail='';reportId='';repo=local?new DemoRepository():new FirebaseRepository(current.uid);
+  if(!local&&!current.emailVerified){busy=false;render();return;}
+  busy=true;progress='Abriendo proyectos…';render();
+  projectDirectory=local?new DemoProjectDirectory():new FirebaseProjectDirectory(current.uid);
+  try{projects=await projectDirectory.list();const selected=localStorage.getItem('tooltrace-active-project:'+accountId());await openProject(projects.some(p=>p.id===selected)?selected:DEFAULT_PROJECT);}
+  catch(error){projects=[initialProject()];busy=false;progress='';notify('No se pudieron abrir los proyectos. '+error.message);render();}
 }
 function cleanup(){if(pdfUrl){URL.revokeObjectURL(pdfUrl);pdfUrl='';}document.querySelector('dialog')?.remove();}
 async function showPDF(id){cleanup();const file=await pdfStore('get',owner()+':'+id);if(!file){notify('Este PDF está en el dispositivo donde se cargó. Puedes volver a cargarlo aquí sin duplicar sus datos.');return;}pdfUrl=URL.createObjectURL(file);const dialog=document.createElement('dialog');dialog.innerHTML=`<div class="panel-title"><h2>PDF original</h2><button data-action="close-pdf" class="secondary">Cerrar</button></div><iframe title="PDF original" src="${pdfUrl}"></iframe><a class="secondary" href="${pdfUrl}" target="_blank" rel="noopener">Abrir en otra pestaña</a>`;document.body.append(dialog);dialog.addEventListener('close',cleanup,{once:true});dialog.showModal();}
