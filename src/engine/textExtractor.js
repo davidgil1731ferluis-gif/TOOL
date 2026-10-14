@@ -3,24 +3,41 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {pdfLines,bhaColumnCandidates} from './pdfLines.js';
 import {inspectionCells} from './inspectionCells.js';
 import {premiumInspectionCells,tuboscopeInspectionCells} from './inspectionFormats.js';
+import {fileKind,decodeText} from './fileFormats.js';
+import {coordinateTable} from './coordinateTable.js';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-export async function textExtractor(file) {
-  if (file.size > 25 * 1024 * 1024) throw new Error('El PDF supera 25 MB.');
+export const EXTRACTION_VERSION=2;
+export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPage=async()=>{}}={}) {
+  if (file.size > 25 * 1024 * 1024) throw new Error('El archivo supera 25 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!new TextDecoder().decode(bytes.slice(0,1024)).includes('%PDF-')) throw new Error('El archivo no tiene una cabecera PDF válida.');
+  const kind=fileKind(file.name,bytes);
+  if(kind==='spreadsheet')return (await import('./spreadsheetExtractor.js')).spreadsheetExtractor(bytes,file.name);
+  if(kind==='text'){const text=decodeText(bytes);if(text.length>2000000)throw new Error('El texto supera dos millones de caracteres.');return {text,pages:[{page:1,text}]};}
+  if(kind==='image'&&cachedPages[0]?.method==='ocr')return {text:cachedPages[0].text,pages:cachedPages};
+  let ocr;const getOCR=async()=>ocr||(ocr=await (await import('./ocrExtractor.js')).createOCR(p=>onProgress('Leyendo texto de imagen: '+p+' %')));
+  if(kind==='image')try{const {imageCanvas}=await import('./ocrExtractor.js');const page=await (await getOCR()).read(await imageCanvas(file));return {text:page.text,pages:[page]};}finally{await ocr?.close();}
   const task = pdfjs.getDocument({data: bytes});
   try {
     const pdf = await task.promise;
     if (pdf.numPages > 200) throw new Error('Máximo 200 páginas por PDF.');
     const pages=[];
     for(let n=1;n<=pdf.numPages;n++) {
-      const content = await (await pdf.getPage(n)).getTextContent();
+      const cached=cachedPages.find(p=>p.page===n&&p.method);if(cached){pages.push(cached);continue;}
+      onProgress(`Leyendo página ${n} de ${pdf.numPages}`);
+      const pdfPage=await pdf.getPage(n);const content = await pdfPage.getTextContent();
       // Agrupar por coordenada vertical; conserva filas aunque PDF.js no emita saltos.
       const text=pdfLines(content.items);
-      pages.push({page:n,text,bhaCandidates:bhaColumnCandidates(content.items),inspectionCandidates:inspectionCells(content.items)||premiumInspectionCells(content.items,text)||tuboscopeInspectionCells(text)});
+      if(text.replace(/\s/g,'').length<80){
+        const original=pdfPage.getViewport({scale:1});const scale=Math.min(2.5,2600/Math.max(original.width,original.height));const viewport=pdfPage.getViewport({scale});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await pdfPage.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        const recognized=await (await getOCR()).read(canvas,n);pages.push({...recognized,text:[text,recognized.text].filter(Boolean).join('\n')});canvas.width=canvas.height=0;
+      }else {
+        const table=/TOTAL\s*QC|Tuboscope|SAIS-OP-F-53R|COMPONENTES? BHA/i.test(text)?null:coordinateTable(content.items,n);
+        pages.push({page:n,text,method:'pdf-text',...(table?{structuredRecords:table.structuredRecords,structuredType:table.structuredType,mixedTypes:table.mixedTypes}:{}),bhaCandidates:bhaColumnCandidates(content.items),inspectionCandidates:inspectionCells(content.items)||premiumInspectionCells(content.items,text)||tuboscopeInspectionCells(text)});
+      }
+      await onPage([...pages]);
     }
     const text=pages.map(p=>p.text).join('\n\n');
-    if(text.trim().length<40) throw new Error('PDF sin texto utilizable. Esta versión requiere texto seleccionable; OCR está pendiente.');
+    if(text.trim().length<10) throw new Error('No se pudo leer texto suficiente. El original queda guardado para completar sus datos.');
     return {text,pages};
-  } finally { await task.destroy(); }
+  } finally { await task.destroy();await ocr?.close(); }
 }

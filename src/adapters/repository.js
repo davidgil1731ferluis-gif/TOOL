@@ -11,6 +11,8 @@ export const emptyState=()=>({...Object.fromEntries(collectionNames.map(key=>[ke
 export async function digest(value) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):value))].map(x=>x.toString(16).padStart(2,'0')).join(''); }
 export function documentErrors(draft) {
   const errors=[];
+  if(draft.mixedDocumentTypes)errors.push('El archivo mezcla tipos de evento. Divide el archivo por tipo de reporte.');
+  if(draft.validationMode==='automatic')errors.push(...(draft.sourceWarnings||[]));
   if(!fieldDefinitions[draft.type]) errors.push('Seleccione el tipo de documento.');
   if(!draft.records?.length) errors.push('No se detectaron seriales.');
   if(draft.records?.length>100) errors.push('Máximo 100 seriales por documento.');

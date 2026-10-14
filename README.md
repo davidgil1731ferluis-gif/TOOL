@@ -2,6 +2,22 @@
 
 Aplicación web/PWA en español para asociar inspecciones, reparaciones y BHA a cada serial. HTML, CSS y JavaScript modular, Firebase Authentication y Firestore, con publicación estática en GitHub Pages.
 
+## Carga de archivos y reconocimiento ampliado
+
+**Cargar archivos** admite PDF, Excel XLSX/XLS, ODS, CSV/TSV, TXT e imágenes PNG/JPG/WebP/BMP. Se puede cargar una mezcla de formatos en un mismo lote. El original se conserva localmente antes de leerlo y su huella SHA-256 evita duplicados aunque se renombre. Las entidades, proyectos, estados e historial conservan su funcionamiento.
+
+- PDF: mantiene los lectores TOTAL QC, NOV Tuboscope, SAIS y BHA. Las páginas con menos de 80 caracteres útiles pasan por OCR. Las tablas de otros emisores pueden reconocerse por sus encabezados y posición de las columnas.
+- Excel/ODS/CSV: busca una cabecera con Serial y los campos del reporte; acepta etiquetas en español e inglés, metadatos en filas anteriores, fechas Excel y seriales con ceros iniciales. Lee todas las hojas. No ejecuta fórmulas ni macros. Si un archivo mezcla familias o varios reportes incompatibles, queda pendiente y debe dividirse por reporte.
+- Imágenes: OCR dentro del navegador, en español e inglés. Worker, WebAssembly e idiomas se publican con la app y se incluyen en la caché PWA; no se envía la imagen a terceros. La primera instalación descarga aproximadamente 33 MB adicionales. El tamaño afecta al tiempo de instalación y al espacio del dispositivo.
+- TXT: reconoce reportes mediante títulos y etiquetas habituales. No admite Word, ZIP, archivos cifrados ni formatos binarios arbitrarios.
+- Los documentos con texto estructurado y datos completos se guardan automáticamente. Los resultados de OCR se revisan una vez por reporte, no serial por serial: los caracteres de un serial no se corrigen por suposición. Los datos faltantes siguen sujetos a la matriz original; no se inventan empresas, fechas ni resultados.
+- **Documentos → Reanalizar pendientes** reutiliza el original conservado. El texto de cada página PDF terminada queda almacenado, incluso si una página posterior falla; se reutiliza con la misma versión del lector. No se toca un reporte ya guardado.
+- **Original** permite ver PDF/imágenes, consultar el texto de tablas y descargar el archivo. Los originales permanecen en el dispositivo de carga, sin R2 ni almacenamiento remoto de archivos.
+
+Límites adicionales: 40 megapíxeles por imagen; 50 hojas, menos de 10.000 filas y 200 columnas por hoja, y 200.000 celdas por libro. Se mantienen 25 MB por archivo, 200 páginas por PDF y 100 seriales por reporte. No se garantiza extraer cualquier diseño: texto ilegible, tablas ambiguas o campos sin rótulo requieren completar datos. Las filas con seriales repetidos nunca se fusionan silenciosamente.
+
+Fuentes de las bibliotecas: [SheetJS 0.20.3](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/) y [Tesseract.js: instalación local](https://github.com/naptha/tesseract.js/blob/master/docs/local-installation.md). `vite.config.js` copia los recursos OCR desde las dependencias; publicar solo `src/` sin compilar no habilita OCR.
+
 ## Proyectos independientes
 
 El selector **Proyecto** permite cambiar de lugar de trabajo y **Nuevo proyecto** crea un espacio vacío. Cada proyecto tiene documentos, herramientas por serial, eventos, BHA, agenda, pendientes y PDFs locales propios. Dashboard, edición y Excel trabajan sobre el proyecto seleccionado. El mismo serial o PDF puede existir en proyectos diferentes; dentro de cada proyecto se mantienen los controles de duplicados. El nombre del proyecto aparece en el archivo Excel descargado.
@@ -21,7 +37,7 @@ Sigue [PRODUCCION.md](PRODUCCION.md) para configurar Firebase y publicar mediant
 - TOTAL QC FT-END-003: mantiene la lectura por celdas, incluyendo textos en varias líneas.
 - SAIS-OP-F-53R Heavy Weight Premium: lee las columnas verticales de cuerpo, PIN, caja y condición final; interpreta OP, R y FS según la leyenda del formato. Conserva reporte, OIT, versión, vigencia, fecha, norma, descripción, conexión y datos de la fila. La fecha de emisión permanece vacía si no está publicada.
 - NOV Tuboscope Heavyweight: usa la hoja de recuento como lista de seriales y enlaza las hojas de mediciones y observaciones por serial. Las páginas de maquinado requerido pertenecen a la inspección, no crean reparaciones realizadas. La conformidad se obtiene de los resultados PIN/BOX únicamente cuando concuerdan con los conteos del resumen y sus códigos son reconocidos. Si hay discrepancias o códigos desconocidos, el documento queda por completar. El código/versión del formato y el cuerpo individual permanecen vacíos si el reporte no los informa.
-- Otros diseños con texto seleccionable: clasificación por títulos y extracción adicional mediante etiquetas habituales en español e inglés. Esto no garantiza reconocer cualquier disposición; los datos ambiguos o insuficientes quedan pendientes. Los PDFs escaneados sin texto seleccionable todavía requieren OCR.
+- Otros diseños con texto seleccionable: clasificación por títulos y extracción adicional mediante etiquetas habituales en español e inglés. Esto no garantiza reconocer cualquier disposición; los datos ambiguos o insuficientes quedan pendientes. Los PDF escaneados se leen con OCR local. Las lecturas por imagen requieren una revisión del reporte completo antes de guardar.
 - **Documentos → Reanalizar pendientes** vuelve a leer juntos los PDFs disponibles de ese proyecto, previa confirmación de que reemplazará los datos pendientes. Los reportes ya guardados se conservan. Se debe usar el dispositivo donde se cargaron los originales.
 - **Historial por herramienta** ordena todos los seriales alfabéticamente, independientemente del grupo. Cada fila conserva los eventos de esa herramienta del más antiguo al más reciente, en bloques horizontales. Las hojas de inspección incluyen también los nuevos datos del formato.
 
@@ -122,7 +138,7 @@ Los nueve PDFs de referencia producen **121 eventos**, con validación automáti
 - NOV Tuboscope: fecha Repair Date de cada fila, distinta de la cabecera; empresa, reporte, orden, PIN/BOX y maquinado.
 - BHA: columna de seriales para códigos numéricos, con guiones o espacios; cabecera y medidas que pueden ubicarse en una sola celda. Los campos opcionales ambiguos quedan vacíos.
 
-Esta es extracción determinista con PDF.js. Los documentos escaneados sin texto quedan conservados y pendientes; todavía no hay OCR ni IA externa. La validación automática no puede garantizar que cualquier formato nuevo se interprete correctamente. El PDF y la evidencia por página se conservan para consultar y corregir.
+La extracción combina PDF.js, lectura de tablas y OCR local con Tesseract.js en español e inglés. No utiliza IA externa. Los escaneos requieren revisión del reporte completo antes de guardar. La validación automática no puede garantizar que cualquier formato nuevo se interprete correctamente. El PDF y la evidencia por página se conservan para consultar y corregir.
 
 ## Edición e integridad
 
@@ -130,7 +146,7 @@ Las ediciones reemplazan los eventos del reporte dentro de una transacción y ma
 
 Cada reporte tiene una revisión. Si otra sesión lo modifica, una edición basada en la revisión anterior se rechaza y la interfaz solicita abrir de nuevo el reporte. La fecha original de incorporación del evento se conserva cuando se corrige.
 
-La clave de duplicado lógico es tipo + empresa + número de reporte + serial + fecha (+ pozo en BHA). Un cambio de nombre del archivo no permite repetir un PDF. Un PDF idéntico sigue bloqueado después de corregir sus datos. Las ediciones no pueden crear eventos equivalentes a los de otro documento. No existe borrado de documentos desde la interfaz ni un historial completo de versiones anteriores de los campos corregidos.
+La clave de duplicado lógico es tipo + empresa + número de reporte + serial + fecha (+ pozo en BHA). Un cambio de nombre del archivo no permite repetir un PDF. Un PDF idéntico sigue bloqueado después de corregir sus datos. Las ediciones no pueden crear eventos equivalentes a los de otro documento. La interfaz permite eliminar documentos individuales, con confirmación del alcance y escritura de ELIMINAR. No se conserva un historial completo de versiones anteriores de los campos corregidos.
 
 Máximos: 25 MB y 200 páginas por PDF; 100 seriales por reporte. Una edición que exceda 480 escrituras se rechaza y debe dividirse en cambios menores.
 

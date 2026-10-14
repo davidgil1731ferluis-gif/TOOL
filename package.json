@@ -11,11 +11,15 @@
     "check:production": "node scripts/check-production-config.mjs"
   },
   "dependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/spa": "1.0.0",
     "firebase": "12.3.0",
-    "pdfjs-dist": "5.4.149"
+    "pdfjs-dist": "5.4.149",
+    "tesseract.js": "6.0.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "vite": "7.1.7"
+    "vite": "7.3.7"
   },
   "engines": {
     "node": ">=20.19"

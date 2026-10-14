@@ -1,7 +1,12 @@
 import {defineConfig} from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
-export default defineConfig({base:'./',optimizeDeps:{noDiscovery:true,include:[]},plugins:[{name:'offline-shell',closeBundle(){
+export default defineConfig({base:'./',optimizeDeps:{noDiscovery:true,include:[]},plugins:[{name:'local-ocr-assets',closeBundle(){
+ const target='dist/ocr';fs.mkdirSync(target,{recursive:true});
+ fs.copyFileSync('node_modules/tesseract.js/dist/worker.min.js',path.join(target,'worker.min.js'));
+ for(const name of ['tesseract-core-lstm.wasm.js','tesseract-core-lstm.wasm','tesseract-core-simd-lstm.wasm.js','tesseract-core-simd-lstm.wasm'])fs.copyFileSync(path.join('node_modules/tesseract.js-core',name),path.join(target,name));
+ for(const lang of ['eng','spa'])fs.copyFileSync(`node_modules/@tesseract.js-data/${lang}/4.0.0/${lang}.traineddata.gz`,path.join(target,`${lang}.traineddata.gz`));
+}}, {name:'offline-shell',closeBundle(){
  const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)]);
  const assets=walk('dist').filter(f=>!f.endsWith('sw.js')).map(f=>'./'+path.relative('dist',f).replaceAll('\\','/'));
  const version='tooltrace-'+Date.now();
