@@ -1,6 +1,6 @@
 import {calendarActivities,timelineSeries,eventTypes} from '../engine/calendar.js';
 const names={INSPECTION:'Inspección',REPAIR:'Reparación',BHA:'BHA'};
-const colors={INSPECTION:'#5d2a1a',REPAIR:'#17191c',BHA:'#777b86'};
+const colors={INSPECTION:'#2563c4',REPAIR:'#138468',BHA:'#8056c7'};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const localDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const pretty=d=>d.split('-').reverse().join('/');
