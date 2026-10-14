@@ -1,6 +1,6 @@
 import {initializeApp} from 'firebase/app';
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,onAuthStateChanged,signOut,connectAuthEmulator,reload} from 'firebase/auth';
-import {getFirestore,collection,getDocs,doc,runTransaction,connectFirestoreEmulator,setDoc,deleteDoc,writeBatch} from 'firebase/firestore';
+import {getFirestore,collection,getDocsFromServer as getDocs,doc,runTransaction,connectFirestoreEmulator,setDoc,deleteDoc,writeBatch} from 'firebase/firestore';
 import {scheduleEntry} from '../engine/calendar.js';
 import {firebaseConfig,useEmulators} from '../config.js';
 import {prepare,applyCommit,applyDocumentRemoval,collectionNames,emptyState} from './repository.js';
@@ -24,6 +24,7 @@ export class FirebaseRepository {
       const read=async(name,id)=>{const key=name+'/'+id;if(!cache.has(key)){const snap=await tx.get(this.ref(name,id));cache.set(key,snap.exists()?snap.data():null);}return cache.get(key);};
       if((await read('settings','maintenance'))?.deleting)throw new Error('El proyecto está en mantenimiento. Intenta de nuevo al terminar.');
       const document=await read('documents',id);if(document)current.documents.push(document);
+      if(document&&options.baseCreatedAt&&document.createdAt!==options.baseCreatedAt)throw new Error('El documento cambió de generación en otra sesión. Revisa la sincronización.');
       const ownIds=new Set([...(document?.eventIds||[]),...seed.filter(e=>e.documentId===id).map(e=>e.id)]),allIds=new Set(ownIds),serials=new Set();
       for(const eventId of ownIds){const event=await read('events',eventId);if(event)serials.add(event.serial);}
       for(const serial of serials){const tool=await read('tools',serial);if(tool)current.tools.push(tool);for(const eventId of tool?.eventIds||seed.filter(e=>e.serial===serial).map(e=>e.id))allIds.add(eventId);}
@@ -44,11 +45,14 @@ export class FirebaseRepository {
   }
   async save(draft,options={}) {
     const prepared=await prepare(draft);
+    if(options.operationId)prepared.document.syncOperationId=options.operationId;
     const seed=(await getDocs(collection(db,...this.path,'events'))).docs.map(d=>d.data());
     return runTransaction(db,async tx=>{
       const current=emptyState();const cache=new Map();
       const read=async(name,id)=>{const key=name+'/'+id;if(!cache.has(key)){const snap=await tx.get(this.ref(name,id));cache.set(key,snap.exists()?snap.data():null);}return cache.get(key);};
       const document=await read('documents',draft.id);if(document)current.documents.push(document);
+      if(document&&options.operationId&&document.syncOperationId===options.operationId)return document;
+      if(document&&options.baseCreatedAt&&document.createdAt!==options.baseCreatedAt)throw new Error('El documento cambió de generación en otra sesión. Revisa la sincronización.');
       if(document&&!options.editing)throw new Error('Este PDF ya fue guardado.');
       const oldIds=document?.eventIds||seed.filter(e=>e.documentId===draft.id).map(e=>e.id);
       const eventIds=new Set([...oldIds,...prepared.events.map(e=>e.id)]);

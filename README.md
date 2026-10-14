@@ -4,6 +4,22 @@ Aplicación web/PWA en español para asociar inspecciones, reparaciones y BHA a 
 
 ## Carga de archivos y reconocimiento ampliado
 
+### Trabajo sin conexión y sincronización
+
+Abre la app e inicia sesión con conexión al menos una vez y visita los proyectos que vas a usar: sus datos se descargan a este dispositivo. Después puedes consultar historiales, cargar archivos disponibles en el dispositivo, guardar reportes, corregirlos, eliminar documentos individuales y modificar la agenda sin internet. Los datos válidos se aplican localmente y se guardan junto con una cola persistente en IndexedDB, separada por cuenta y proyecto.
+
+Al volver la conexión con la app abierta, al reabrirla o volver a ella, se envían los cambios pendientes en orden. Varias ediciones del mismo reporte terminan en la última versión guardada. La app reintenta los envíos pendientes periódicamente; no vuelve a descargar todas las colecciones si no hay cambios pendientes. El indicador superior distingue **Por sincronizar**, **Sincronizado** y **Revisar sincronización**. Puedes pulsarlo para consultar o reintentar.
+
+Los campos de un formulario se conservan como **borrador local**, incluso al editar un reporte existente. Al reabrirlo se recupera el borrador. Pulsa **Guardar reporte / Guardar cambios** para validarlo, aplicarlo al historial y ponerlo en la cola de sincronización: un borrador incompleto no se publica automáticamente. Borrar los datos del navegador también borra los cambios locales que todavía no se hayan enviado.
+
+Si otro dispositivo editó el mismo reporte, la sincronización conserva la versión local y pide elegir entre **Conservar mis cambios locales** y **Usar la versión en línea**. La segunda opción descarta las ediciones pendientes de ese reporte; los otros documentos se conservan. Un envío confirmado cuya respuesta se pierda se reconoce por su identificador, sin repetir eventos. Los estados de herramientas y miembros BHA se siguen actualizando dentro de las transacciones del servidor.
+
+Crear proyectos, vaciarlos y eliminarlos requiere conexión. No se puede vaciar un proyecto con cambios pendientes sin resolver. La sincronización necesita la sesión de la misma cuenta; si la app está cerrada, se retomará al abrirla con conexión. Los archivos originales continúan guardados localmente, sin almacenamiento remoto de archivos.
+
+### Estados y autocompletado de inspección
+
+**Cuerpo, PIN y BOX** ofrecen opciones para elegir o escribir con autocompletado: Conforme, No conforme / reparable y Fuera de servicio. PIN/BOX conservan también los códigos de los reportes NOV, como OK, TG, TD, TC, TP, ST, TW, RF y RB. Los valores existentes no se reemplazan por suposición. La conformidad final mantiene la lista de los tres estados técnicos del aplicativo. Empresa, código/versión, norma, descripción y conexión sugieren valores anteriores del proyecto actual; también admiten texto nuevo.
+
 **Diferencias de cantidad:** si el texto indica 12 y se detectan 22 seriales, abre **Documentos → Completar**. En **Revisar cantidad de seriales** consulta la lista, el original y las páginas donde se leyó cada cantidad; después pulsa **Confirmar los 22 seriales detectados** y **Guardar reporte**. Es una confirmación para todo el documento y funciona con pendientes ya cargados, sin volver a subirlos. Se conservan el conteo leído y la lista confirmada con fecha. Si cambias los seriales o la cantidad original, se debe confirmar de nuevo. Esto no omite campos obligatorios, fechas ni controles de duplicados. Cantidades contradictorias nunca se resuelven tomando simplemente el número mayor.
 
 **Cargar archivos** admite PDF, Excel XLSX/XLS, ODS, CSV/TSV, TXT e imágenes PNG/JPG/WebP/BMP. Se puede cargar una mezcla de formatos en un mismo lote. El original se conserva localmente antes de leerlo y su huella SHA-256 evita duplicados aunque se renombre. Las entidades, proyectos, estados e historial conservan su funcionamiento.

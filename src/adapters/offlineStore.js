@@ -1,0 +1,6 @@
+function open(){return new Promise((resolve,reject)=>{const q=indexedDB.open('tooltrace-offline',1);q.onupgradeneeded=()=>q.result.createObjectStore('state');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});}
+export const offlineStore={
+ async get(key){const db=await open();try{return await new Promise((resolve,reject)=>{const q=db.transaction('state').objectStore('state').get(key);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});}finally{db.close();}},
+ async list(){const db=await open();try{return await new Promise((resolve,reject)=>{const q=db.transaction('state').objectStore('state').getAll();q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});}finally{db.close();}},
+ async update(key,change){const db=await open();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite'),store=tx.objectStore('state');let value,failure;const q=store.get(key);q.onsuccess=()=>{try{value=change(q.result);store.put(value,key);}catch(e){failure=e;tx.abort();}};tx.oncomplete=()=>resolve(value);tx.onabort=()=>reject(failure||tx.error||new Error('No se pudo guardar en el dispositivo.'));tx.onerror=()=>{};});}finally{db.close();}}
+};
