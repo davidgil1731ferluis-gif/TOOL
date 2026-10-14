@@ -12,6 +12,7 @@ export async function pdfStore(action,key,value) {
   });}finally{db.close();}
 }
 export const archive={
+  async remove(owner,id){const db=await open();try{await new Promise((resolve,reject)=>{const tx=db.transaction(['files','inbox'],'readwrite'),key=owner+':'+id;tx.objectStore('files').delete(key);tx.objectStore('inbox').delete(key);tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||new Error('No se pudo eliminar el PDF local.'));tx.onerror=()=>reject(tx.error);});}finally{db.close();}},
   async clear(owner){const db=await open();try{await new Promise((resolve,reject)=>{const tx=db.transaction(['files','inbox'],'readwrite');for(const name of ['files','inbox']){const req=tx.objectStore(name).openCursor();req.onsuccess=()=>{const cursor=req.result;if(cursor){if(String(cursor.key).startsWith(owner+':'))cursor.delete();cursor.continue();}};}tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);tx.onerror=()=>reject(tx.error);});}finally{db.close();}},
   async list(owner) {
     const db=await open();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('inbox');const req=tx.objectStore('inbox').getAll();req.onsuccess=()=>resolve(req.result.filter(e=>e.owner===owner));req.onerror=()=>reject(req.error);});}finally{db.close();}
