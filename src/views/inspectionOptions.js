@@ -1,2 +1,3 @@
-export const inspectionStates=['Conforme','No conforme / reparable','Fuera de servicio','OK','TG','TD','TC','TP','ST','TW','RF','RB'];
-export const inspectionSuggestions={body:['Conforme','No conforme / reparable','Fuera de servicio'],pin:inspectionStates,box:inspectionStates};
+import {componentStates} from '../engine/componentStates.js';
+export const inspectionStates=componentStates;
+export const inspectionSuggestions={body:componentStates,pin:componentStates,box:componentStates};

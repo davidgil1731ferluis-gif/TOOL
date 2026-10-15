@@ -1,3 +1,4 @@
+import {normalizeComponentFields} from '../engine/componentStates.js';
 import {applyGroup,applyTool,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,applyAssignments,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
 import {serialNormalizer} from '../engine/serialNormalizer.js';
 import {matrixValidator} from '../engine/matrixValidator.js';
@@ -33,7 +34,7 @@ export async function prepare(draft) {
   const errors=documentErrors(draft);if(errors.length) throw new Error(errors.join(' '));
   const at=new Date().toISOString();const events=[];
   for(const record of draft.records) {
-    const fields=Object.fromEntries(fieldDefinitions[draft.type].map(([key])=>[key,String(record.fields[key]??'').trim()]));
+    const fields=normalizeComponentFields(draft.type,Object.fromEntries(fieldDefinitions[draft.type].map(([key])=>[key,String(record.fields[key]??'').trim()])));
     const serial=serialNormalizer(record.serial);
     const ref=(fields.certificateNumber||fields.reportNumber||fields.bhaNumber).toUpperCase();
     const date=fields.inspectionDate||fields.repairDate||fields.bhaDate;

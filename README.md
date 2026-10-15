@@ -254,3 +254,12 @@ El lector de Excel BHA reconoce encabezados con celdas combinadas, número BHA, 
 Los límites de filas/columnas se aplican al contenido real, evitando rechazar un libro por columnas vacías que conservan formato. Cuando hay una tabla principal de componentes BHA, las hojas de inventario o tally sin contexto de evento completo no heredan sus metadatos. Las hojas omitidas aparecen en un detalle del formulario y siempre se conservan en el original. Otros reportes reconocidos del libro se mantienen y se detecta la mezcla de tipos para revisión.
 
 Cada registro conserva hoja y celda del serial. Las celdas con varios identificadores, alias o formatos ambiguos se conservan completas y se señalan para revisión; no se unen ni separan por suposición. Las filas de componentes con medidas pero sin serial también impiden el guardado automático. El formulario mantiene las correcciones manuales y permite completar el reporte una sola vez. La versión de extracción es 4: usa Reanalizar pendientes para volver a leer archivos ya cargados; los documentos guardados no se reemplazan automáticamente.
+
+
+## Estados de Cuerpo, PIN y BOX
+
+Las sugerencias de los campos Cuerpo, PIN y BOX, tanto en inspección como en reparación donde estén presentes, contienen exactamente tres opciones: **Conforme**, **No conforme/reparable** y **Fuera de servicio**. No se añaden códigos históricos ni OK como opciones. Los campos siguen admitiendo escritura: OK, ok o variantes de mayúsculas/espacios se muestran como Conforme al salir del campo.
+
+La lectura automática normaliza la misma equivalencia después de combinar texto y tablas, y el guardado vuelve a aplicarla para cubrir formularios antiguos, importaciones y cambios sin conexión. Las vistas y el Excel interpretan los valores históricos OK como Conforme sin reescribir el original. La evidencia del documento se conserva. Otros códigos desconocidos se conservan tal como aparecen: no se convierten en conformidad por suposición. La equivalencia se aplica a la pieza; no inventa la conformidad final de una inspección ni cambia la regla de reparación emitida = herramienta operativa.
+
+La versión de extracción es 5. Los pendientes anteriores se pueden reanalizar desde el original; los reportes ya guardados permanecen disponibles para edición. No cambian las reglas de Firebase ni las entidades.

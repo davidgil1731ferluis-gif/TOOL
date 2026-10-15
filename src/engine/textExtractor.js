@@ -6,7 +6,7 @@ import {premiumInspectionCells,tuboscopeInspectionCells} from './inspectionForma
 import {fileKind,decodeText} from './fileFormats.js';
 import {coordinateTable} from './coordinateTable.js';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-export const EXTRACTION_VERSION=4;
+export const EXTRACTION_VERSION=5;
 export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPage=async()=>{}}={}) {
   if (file.size > 25 * 1024 * 1024) throw new Error('El archivo supera 25 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
