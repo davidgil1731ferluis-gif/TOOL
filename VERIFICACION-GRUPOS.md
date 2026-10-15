@@ -1,0 +1,9 @@
+# Verificación de gestión de grupos y filtros
+
+- 93 pruebas automatizadas: extracción y estados existentes, edición y borrado de grupos, asignación múltiple, vaciado de grupo con reportes compartidos, preservación de agenda y otros seriales, revisión única por reporte, conteo auditado, generaciones y revisiones obsoletas, recuperación de conflictos y reintentos sin repetir borrados tras perder la respuesta.
+- La edición conserva el ID del grupo y el Excel muestra el nombre actualizado; se rechazan nombres duplicados. La asignación conserva tipo y estado de seriales existentes y valida toda la lista antes de guardar.
+- Rangos inclusivos, límites abiertos, rango inválido, fichas sin eventos, combinación de grupo/búsqueda/estado y Excel con el historial completo de seriales seleccionados.
+- Chrome aislado en demostración local: crear/renombrar/color, pegar seriales existentes y nuevos sin duplicados, eliminar grupo trasladando sus fichas, cancelar el vaciado y ejecutarlo con doble confirmación, conservar eventos ajenos y aumentar una sola revisión por reporte. Formularios comprobados con controles cuyo nombre coincide con propiedades nativas del formulario.
+- Filtros de fechas y estado comprobados contra los datos originales. El Excel generado por la acción de la interfaz contiene los mismos nueve seriales de la vista de prueba; se revisó con openpyxl. Se capturó el Blob generado porque la descarga nativa de Chrome sin interfaz fue cancelada por el entorno de pruebas.
+- Móvil de 390 px sin desborde de página; PWA vuelve a abrir sin conexión con los grupos conservados. Sin errores JavaScript.
+- Reglas Firebase compiladas y publicadas en tooltracker-d3140. La cola y sus conflictos se verificaron contra un remoto simulado; no se insertaron ni borraron datos de prueba en la cuenta productiva. Las pruebas de navegador usan perfiles de demostración aislados.

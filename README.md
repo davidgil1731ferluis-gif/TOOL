@@ -227,3 +227,19 @@ Documentos muestra junto a Eliminar la fecha real del evento. Si hay varias fech
 El lector PDF reconstruye letras sueltas mediante sus coordenadas y separa correctamente las columnas Cuerpo/PIN/BOX/Conformidad de tablas TOTAL QC anchas. La versión de extracción se incrementó: los pendientes se pueden volver a analizar desde sus originales. Los reportes ya guardados se conservan y pueden corregirse desde Editar. Los formatos desconocidos o datos dudosos siguen requiriendo revisión; no se garantiza reconocer automáticamente cualquier diseño futuro.
 
 Las nuevas colecciones `toolGroups` y `syncReceipts` requieren publicar `firestore.rules` antes del frontend. Los recibos permiten reintentar una eliminación ya aceptada sin borrar una carga posterior del mismo serial. Se incluyen en el vaciado de proyecto. No contienen archivos ni credenciales.
+
+
+## Gestionar grupos, asignar seriales y filtrar herramientas
+
+En **Herramientas → Gestionar grupos** puedes:
+
+- **Editar** el nombre y el color de los grupos creados. La identidad del grupo y los historiales se conservan.
+- **Añadir seriales** escribiendo o pegando hasta 100 valores separados por líneas, espacios, comas o punto y coma. Los repetidos se unifican; los seriales existentes conservan tipo y estado técnico, y se trasladan al grupo seleccionado. Los nuevos se crean sin estado técnico.
+- **Eliminar grupo**: exige escribir ELIMINAR y elegir otro grupo al que trasladar sus herramientas. Conserva todos los reportes y eventos.
+- **Borrar todos los seriales**: muestra la cantidad, pide una primera confirmación y después escribir ELIMINAR. Elimina las herramientas confirmadas y sus eventos; mantiene el grupo vacío y la agenda. Los reportes compartidos conservan los seriales ajenos, con cantidad y revisión actualizadas una sola vez. Los reportes sin seriales restantes y sus originales locales se eliminan al completar la sincronización.
+
+Los grupos iniciales HWDP y Otras admiten asignación de seriales y vaciado; su nombre y existencia se conservan. Las acciones afectan únicamente al proyecto abierto y también quedan guardadas sin conexión. Si un historial o grupo cambió en otro dispositivo, la sincronización permite recuperar la versión actual para revisar y confirmar de nuevo. Los borrados masivos se limitan a una transacción de hasta 475 cambios; si se supera el límite, divide los cambios en grupos más pequeños.
+
+Los filtros **Eventos desde**, **Eventos hasta** y **Estado actual** se combinan con grupo y búsqueda. Los extremos de fecha son inclusivos y seleccionan herramientas que tengan al menos un evento (inspección, reparación o BHA) dentro del rango. El estado es el técnico actual, aunque su evento sea posterior al rango. Una herramienta manual sin eventos no aparece al filtrar por fechas. **Limpiar filtros** restablece toda la selección. **Excel de esta vista** respeta los filtros y conserva el historial completo de cada herramienta seleccionada.
+
+Esta versión amplía las reglas de grupos para la versión de pertenencia y los recibos de sincronización; publica `firestore.rules` antes del frontend. La asignación y el traslado leen las fichas actuales en transacción para conservar su estado e historial. Los recibos impiden repetir un vaciado ya aceptado cuando se pierde la respuesta.

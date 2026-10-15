@@ -1,11 +1,12 @@
+import {toolMatches} from '../engine/toolFilters.js';
 import {groupId,groupInfo} from '../engine/toolCatalog.js';
 import {fieldDefinitions} from '../engine/fieldExtractor.js';
 import {matrixValidator} from '../engine/matrixValidator.js';
 const col=(label,type='text')=>({label,type});
-export function reportModel(data,{group='ALL',search='',pending=[]}={}) {
+export function reportModel(data,{group='ALL',search='',from='',to='',status='ALL',pending=[]}={}) {
   const tool=serial=>data.tools.find(t=>t.serial===serial)||{serial};
   const groupName=serial=>groupInfo(data,tool(serial)).name;
-  const matches=serial=>(group==='ALL'||groupId(tool(serial))===group)&&serial.includes(search);
+  const matches=serial=>toolMatches(tool(serial),data.events,{group,search,from,to,status});
   const tools=data.tools.filter(t=>matches(t.serial)).sort((a,b)=>a.serial.localeCompare(b.serial));
   const documents=new Map(data.documents.map(d=>[d.id,d]));
   const names={INSPECTION:'Inspección',REPAIR:'Reparación',BHA:'BHA'};
@@ -26,7 +27,7 @@ export function reportModel(data,{group='ALL',search='',pending=[]}={}) {
   const waiting=[];
   const pendingDefs=[...new Map(Object.values(fieldDefinitions).flat().map(def=>[def[0],def])).values()];
   for(const d of pending){
-    if(!d.records?.length){if(group==='ALL'&&!search)waiting.push(['','',d.name,d.type,d.error||'Sin seriales detectados',...pendingDefs.map(()=>''),'']);continue;}
+    if(!d.records?.length){if(group==='ALL'&&!search&&!from&&!to&&status==='ALL')waiting.push(['','',d.name,d.type,d.error||'Sin seriales detectados',...pendingDefs.map(()=>''),'']);continue;}
     for(const r of d.records){if(!matches(r.serial))continue;const errors=[d.error,...matrixValidator(d.type,r)].filter(Boolean).join(' ').replace(/\b[a-zA-Z]+\b/g,key=>pendingDefs.find(([k])=>k===key)?.[1]||key);waiting.push([r.serial,groupName(r.serial),d.name,d.type,errors,...pendingDefs.map(([key])=>r.fields?.[key]||''),[...new Set((r.evidence||[]).map(e=>e.page))].join(', ')]);}
   }
   if(waiting.length)sheets.push({name:'Por completar',columns:[...['Serial','Grupo','PDF de origen','Tipo','Datos por completar'].map(x=>col(x)),...pendingDefs.map(([,label])=>col(label)),col('Páginas')],rows:waiting});

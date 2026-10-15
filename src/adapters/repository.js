@@ -1,4 +1,4 @@
-import {applyGroup,applyTool,applyToolRemoval} from '../engine/toolCatalog.js';
+import {applyGroup,applyTool,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,applyAssignments,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
 import {serialNormalizer} from '../engine/serialNormalizer.js';
 import {matrixValidator} from '../engine/matrixValidator.js';
 import {fieldDefinitions} from '../engine/fieldExtractor.js';
@@ -101,8 +101,12 @@ export function applyDocumentRemoval(previous,id,{baseRevision}={}) {
 export class DemoRepository {
   constructor(project='principal'){this.key=demoStateKey(project);}
   async load(){return {...emptyState(),...JSON.parse(localStorage.getItem(this.key)||'{}')};}
-  async catalogChange(change){const commit=async()=>{const result=change(await this.load());localStorage.setItem(this.key,JSON.stringify(result.state));return result.entry||{affectedDocumentIds:result.affectedDocumentIds,removedDocumentIds:result.removedDocumentIds};};return globalThis.navigator?.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
+  async catalogChange(change){const commit=async()=>{const result=change(await this.load());localStorage.setItem(this.key,JSON.stringify(result.state));return result.entry||{affectedDocumentIds:result.affectedDocumentIds,removedDocumentIds:result.removedDocumentIds,serials:result.serials};};return globalThis.navigator?.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
   async saveGroup(input){return this.catalogChange(state=>applyGroup(state,input));}
+  async updateGroup(input,options){return this.catalogChange(state=>applyGroupUpdate(state,input,options));}
+  async deleteGroup(id,targetId,options){return this.catalogChange(state=>applyGroupRemoval(state,id,targetId,options));}
+  async deleteGroupTools(id,options){return this.catalogChange(state=>applyGroupToolsRemoval(state,id,options));}
+  async assignSerials(input){return this.catalogChange(state=>applyAssignments(state,input));}
   async saveTool(input){return this.catalogChange(state=>applyTool(state,input));}
   async deleteTool(serial,options){return this.catalogChange(state=>applyToolRemoval(state,serial,options));}
   async saveSchedule(input){const entry=scheduleEntry(input);const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==entry.id).concat(entry);localStorage.setItem(this.key,JSON.stringify(state));return entry;};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}
