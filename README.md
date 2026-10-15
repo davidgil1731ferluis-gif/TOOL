@@ -243,3 +243,14 @@ Los grupos iniciales HWDP y Otras admiten asignación de seriales y vaciado; su 
 Los filtros **Eventos desde**, **Eventos hasta** y **Estado actual** se combinan con grupo y búsqueda. Los extremos de fecha son inclusivos y seleccionan herramientas que tengan al menos un evento (inspección, reparación o BHA) dentro del rango. El estado es el técnico actual, aunque su evento sea posterior al rango. Una herramienta manual sin eventos no aparece al filtrar por fechas. **Limpiar filtros** restablece toda la selección. **Excel de esta vista** respeta los filtros y conserva el historial completo de cada herramienta seleccionada.
 
 Esta versión amplía las reglas de grupos para la versión de pertenencia y los recibos de sincronización; publica `firestore.rules` antes del frontend. La asignación y el traslado leen las fichas actuales en transacción para conservar su estado e historial. Los recibos impiden repetir un vaciado ya aceptado cuando se pierde la respuesta.
+
+
+## Calendario con tarjetas y lectura de libros BHA
+
+El calendario mensual muestra tarjetas por reporte y fecha, con tipo, referencia y cantidad de seriales. Una tarjeta de reporte abre su detalle; una tarjeta agendada abre la cita para editarla. Los eventos programados tienen borde discontinuo. Se muestran tres tarjetas por día y el botón de eventos adicionales abre el detalle completo del día. En pantallas pequeñas se puede desplazar el calendario horizontalmente, manteniendo legibles las tarjetas.
+
+El lector de Excel BHA reconoce encabezados con celdas combinadas, número BHA, locación/pozo, fase, fecha y columnas de medidas con unidades. Propietario y otros datos se rellenan únicamente desde la celda combinada que realmente cubre esa fila. Conserva ceros iniciales y seriales numéricos; las fechas cortas dd-mm-aa del formato BHA se interpretan como 20aa, validando la fecha resultante. Lee valores guardados de fórmulas sin ejecutarlas.
+
+Los límites de filas/columnas se aplican al contenido real, evitando rechazar un libro por columnas vacías que conservan formato. Cuando hay una tabla principal de componentes BHA, las hojas de inventario o tally sin contexto de evento completo no heredan sus metadatos. Las hojas omitidas aparecen en un detalle del formulario y siempre se conservan en el original. Otros reportes reconocidos del libro se mantienen y se detecta la mezcla de tipos para revisión.
+
+Cada registro conserva hoja y celda del serial. Las celdas con varios identificadores, alias o formatos ambiguos se conservan completas y se señalan para revisión; no se unen ni separan por suposición. Las filas de componentes con medidas pero sin serial también impiden el guardado automático. El formulario mantiene las correcciones manuales y permite completar el reporte una sola vez. La versión de extracción es 4: usa Reanalizar pendientes para volver a leer archivos ya cargados; los documentos guardados no se reemplazan automáticamente.

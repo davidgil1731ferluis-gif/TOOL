@@ -12,7 +12,7 @@ export function scheduleEntry(input){
 // Un reporte multiserial representa una actividad por fecha, no decenas de citas.
 export function calendarActivities(data){
   const docs=new Map(data.documents.map(d=>[d.id,d])),map=new Map();
-  for(const e of data.events){const key=[e.documentId,e.type,e.date].join('|');let a=map.get(key);if(!a){a={id:key,date:e.date,type:e.type,title:docs.get(e.documentId)?.name||e.fields.reportNumber||e.fields.certificateNumber||'BHA '+e.fields.bhaNumber,documentId:e.documentId,serials:[],planned:false};map.set(key,a);}a.serials.push(e.serial);}
+  for(const e of data.events){const key=[e.documentId,e.type,e.date].join('|');let a=map.get(key);if(!a){a={id:key,date:e.date,type:e.type,title:docs.get(e.documentId)?.name||e.fields.reportNumber||e.fields.certificateNumber||'BHA '+e.fields.bhaNumber,documentId:e.documentId,reference:e.fields.certificateNumber||e.fields.reportNumber||(e.fields.bhaNumber?'BHA '+e.fields.bhaNumber:''),context:e.fields.issuer||e.fields.well||'',serials:[],planned:false};map.set(key,a);}a.serials.push(e.serial);}
   return [...map.values(),...(data.scheduledEvents||[]).map(e=>({...e,serials:e.serial?[e.serial]:[],planned:true}))].sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title));
 }
 export function timelineSeries(data){

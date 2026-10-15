@@ -12,7 +12,7 @@ export function analyze(pages,override) {
   for(const r of records) r.confidence=confidenceEngine(type,r,template);
   const rowCount=template==='SAIS_PREMIUM_HW'?Math.max(0,...[...text.matchAll(/^\s*(\d+)\s+[A-Z0-9._-]{3,}\s+\d+[.,]\d+/gm)].map(m=>+m[1])):0;
   const countEvidence=readCounts(pages,type,rowCount);const expectedCount=countEvidence[0]?.count||0;
-  const sourceWarnings=[];
+  const sourceWarnings=pages.flatMap(p=>p.sourceWarnings||[]);
   if(structuredTypes.length>1||pages.some(p=>p.mixedTypes))sourceWarnings.push('El archivo mezcla tipos de evento. Separa los reportes antes de guardarlos.');
   if(pages.some(p=>p.method==='ocr'))sourceWarnings.push('Lectura de imagen: confirma los seriales y resultados detectados antes de guardar.');
   return {type,template,records,expectedCount,countEvidence,sourceWarnings,mixedDocumentTypes:structuredTypes.length>1||pages.some(p=>p.mixedTypes)};

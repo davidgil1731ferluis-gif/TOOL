@@ -1,0 +1,8 @@
+# Calendario con tarjetas y Excel BHA
+
+- 99 pruebas automatizadas: regresiones existentes más lectura BHA con rangos vacíos formateados, metadatos desplazados, celdas combinadas, fecha corta, ceros iniciales, identificación de hojas auxiliares, preservación de otros tipos documentales, límites de contenido real, celdas ambiguas y componentes sin serial.
+- Tarjetas de calendario: agrupación de un reporte multiserial en una tarjeta por fecha; referencia y empresa/pozo; agenda diferenciada; apertura de reportes y citas; máximo tres tarjetas visibles con acceso a todos los eventos del día; texto escapado y acciones sin botones anidados.
+- Archivo real aportado: se detectan 35 filas en el reporte BHA. Se conservan tres celdas con identificadores ambiguos para revisión, con sus coordenadas. Siete hojas de apoyo no se convierten en eventos ni heredan fase/fecha. Fecha, locación, fase, propietario y medidas cotejados con las celdas originales. El original no fue modificado ni se distribuye en el proyecto.
+- Chrome aislado en demostración local: tarjetas históricas y programadas, abrir reporte, editar cita desde tarjeta, ver eventos adicionales, detalle del día completo, móvil de 390 px sin desborde de página y desplazamiento horizontal del calendario.
+- Carga del Excel real: 35 registros, tres abiertos para corregir, lista de hojas auxiliares y fecha normalizada; no se crearon herramientas por error. El original, los registros y las advertencias siguen disponibles tras recargar la PWA sin conexión. Sin errores JavaScript.
+- No se modificaron reglas Firebase ni se insertaron datos privados/de prueba en la cuenta productiva. La detección conservadora no garantiza extraer cualquier diseño futuro ni resolver automáticamente alias de seriales.
