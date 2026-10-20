@@ -17,7 +17,7 @@ export function bhaSpreadsheetPage(rows,page,sheet,ws={}){
   const value=rows[r][next];metadata[key]=key==='bhaDate'?bhaDate(value):String(value).trim();
  }
  if(!metadata.bhaNumber||(!/BHA/i.test(sheet)&&!rows.slice(0,header).some(r=>r.some(v=>/COMPONENTES?\s+BHA/i.test(String(v))))))return null;
- const serialColumn=columns.indexOf('serial'),fieldsAllowed=new Set(['owner','outerDiameter','innerDiameter','fishingNeck','length']),records=[];
+ const serialColumn=columns.indexOf('serial'),fieldsAllowed=new Set(['description','owner','outerDiameter','innerDiameter','fishingNeck','length']),records=[];
  const merged=(r,c)=>{const merge=(ws['!merges']||[]).find(m=>r>=m.s.r&&r<=m.e.r&&c>=m.s.c&&c<=m.e.c);return merge?rows[merge.s.r]?.[merge.s.c]:rows[r]?.[c];};
  for(let r=header+1;r<rows.length;r++){
   const row=rows[r];if(row.some(v=>/JETS\s+BROCA|LONGITUD\s+TOTAL\s+BHA|^TFA$|^VERIFICADO$/i.test(String(v).trim())))break;

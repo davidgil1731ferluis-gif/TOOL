@@ -15,7 +15,7 @@ export function normalizeDate(value) {
 export const fieldDefinitions = {
   INSPECTION: [['certificateNumber','Certificado / número de formato'],['formatCode','Código de formato'],['formatVersion','Versión'],['versionDate','Fecha de versión','date'],['issuer','Empresa emisora'],['inspectionDate','Fecha de inspección','date'],['issueDate','Fecha de emisión','date'],['body','Cuerpo'],['pin','PIN'],['box','BOX'],['finalConformity','Conformidad final','status'],['findings','Hallazgos','textarea'],['observations','Observaciones','textarea'],['workOrder','Orden de trabajo'],['standard','Norma / procedimiento'],['description','Descripción de herramienta'],['connection','Conexión'],['measurements','Mediciones y datos de la fila','textarea']],
   REPAIR: [['issuer','Empresa emisora'],['reportNumber','Número de reporte'],['workOrder','Orden de trabajo'],['repairDate','Fecha de reparación','date'],['pin','Estado PIN'],['box','Estado BOX'],['machining','Maquinado','textarea'],['observations','Observaciones','textarea']],
-  BHA: [['bhaNumber','Número BHA'],['well','Pozo'],['phase','Fase'],['bhaDate','Fecha','date'],['owner','Propietario'],['outerDiameter','Diámetro externo (in)'],['innerDiameter','Diámetro interno (in)'],['fishingNeck','Fishing neck (ft)'],['length','Longitud (ft)']]
+  BHA: [['description','Descripción de la herramienta'],['bhaNumber','Número BHA'],['well','Pozo'],['phase','Fase'],['bhaDate','Fecha','date'],['owner','Propietario'],['outerDiameter','Diámetro externo (in)'],['innerDiameter','Diámetro interno (in)'],['fishingNeck','Fishing neck (ft)'],['length','Longitud (ft)']]
 };
 export function fieldExtractor(text,type,record) {
   const fields=Object.fromEntries((fieldDefinitions[type]||[]).map(([key])=>[key,'']));

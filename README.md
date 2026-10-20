@@ -263,3 +263,15 @@ Las sugerencias de los campos Cuerpo, PIN y BOX, tanto en inspección como en re
 La lectura automática normaliza la misma equivalencia después de combinar texto y tablas, y el guardado vuelve a aplicarla para cubrir formularios antiguos, importaciones y cambios sin conexión. Las vistas y el Excel interpretan los valores históricos OK como Conforme sin reescribir el original. La evidencia del documento se conserva. Otros códigos desconocidos se conservan tal como aparecen: no se convierten en conformidad por suposición. La equivalencia se aplica a la pieza; no inventa la conformidad final de una inspección ni cambia la regla de reparación emitida = herramienta operativa.
 
 La versión de extracción es 5. Los pendientes anteriores se pueden reanalizar desde el original; los reportes ya guardados permanecen disponibles para edición. No cambian las reglas de Firebase ni las entidades.
+
+
+## Nombres de herramientas (actualización preparada)
+
+- Cada serial conserva su identidad y admite un `toolName` opcional (hasta 160 caracteres), independiente de grupo y tipo. Puede editarse desde **Herramientas → Editar**. Varias herramientas pueden compartir nombre.
+- El filtro **Nombre** combina búsqueda sin distinguir tildes/mayúsculas con serial, grupo, fechas y estado. Excel de esta vista respeta la selección y conserva el historial completo.
+- Los BHA nuevos leen **Descripción de la herramienta** en tablas Excel, incluidas celdas combinadas reales, y en PDF con columnas reconocidas. Las herramientas nuevas reciben el nombre explícito al guardar el BHA; las existentes se completan mediante revisión.
+- **Completar nombres desde BHA** revisa los eventos ya guardados y vuelve a leer los originales disponibles en este dispositivo, sin guardar ni revalidar los documentos. Solo relaciona descripciones con seriales ya validados en el mismo reporte y usa la fecha validada. No usa el nombre de archivo para adivinar herramientas.
+- La vista previa usa la descripción disponible del BHA más reciente. Omite nombres existentes, seriales sin coincidencia exacta y nombres distintos con la misma fecha más reciente. Se eligen las propuestas antes de guardar; se puede seleccionar todo. Una cantidad inicial, como `(5)`, se omite del nombre propuesto.
+- La confirmación modifica exclusivamente metadatos de nombre en `tools`: no cambia `documents`, `events`, `bha`, `bhaMembers`, grupos, agenda ni el estado técnico. No es una migración de documentos. Los nombres se guardan también sin conexión y sincronizan en orden.
+- Se verifica la generación del serial, el nombre previo y la revisión del BHA antes del cambio remoto. Si cambiaron, se pide revisar la versión en línea. Los reintentos de una misma operación son idempotentes.
+- Los originales permanecen en el navegador donde se subieron. Si faltan, la vista previa lo indica; abrir desde ese dispositivo o nombrar manualmente. No se borra ni reemplaza la base de datos. No requiere cambiar las reglas actuales de Firestore.

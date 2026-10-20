@@ -1,3 +1,4 @@
+import {cleanToolName} from './toolNames.js';
 import {serialNormalizer,validSerial} from './serialNormalizer.js';
 import {toolGroup} from './toolGroup.js';
 import {statusEngine} from './statusEngine.js';
@@ -19,8 +20,10 @@ export function toolEntry(previous,input,data){
  const serial=serialNormalizer(input.serial),selected=String(input.groupId||toolGroup(serial)),toolType=String(input.toolType||'').trim();
  if(!validSerial(serial))throw new Error('Escribe un serial válido de 3 a 64 caracteres.');
  if(!groups(data).some(g=>g.id===selected))throw new Error('El grupo ya no está disponible.');
+ if(input.baseName!==undefined&&previous&&((previous.toolName||'')!==input.baseName||previous.createdAt!==input.baseCreatedAt))throw new Error('El nombre cambió en otra sesión. Revisa la herramienta.');
+ const toolName=cleanToolName(input.toolName??previous?.toolName);if(toolName.length>160)throw new Error('El nombre admite hasta 160 caracteres.');
  if(toolType.length>100)throw new Error('El tipo de herramienta admite hasta 100 caracteres.');
- return {...(previous||statusEngine([])),id:serial,serial,group:toolGroup(serial),groupId:selected,toolType,registered:true,createdAt:previous?.createdAt||input.createdAt||new Date().toISOString(),eventIds:previous?.eventIds||[]};
+ return {...(previous||statusEngine([])),id:serial,serial,group:toolGroup(serial),groupId:selected,toolType,toolName,...(input.toolName!==undefined?{nameSource:'MANUAL',nameSourceDocumentId:'',nameSourceDate:''}:{}),registered:true,createdAt:previous?.createdAt||input.createdAt||new Date().toISOString(),eventIds:previous?.eventIds||[]};
 }
 export function catalogDiff(previous,state){
  const writes=[];

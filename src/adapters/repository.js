@@ -1,3 +1,4 @@
+import {applyToolName,toolNameProposals} from '../engine/toolNames.js';
 import {normalizeComponentFields} from '../engine/componentStates.js';
 import {applyGroup,applyTool,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,applyAssignments,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
 import {serialNormalizer} from '../engine/serialNormalizer.js';
@@ -71,6 +72,7 @@ export function applyCommit(previous,prepared,{editing=false,baseRevision=0}={})
     state.tools=state.tools.filter(t=>t.serial!==serial);
     if(events.length) state.tools.push({...tool,id:serial,serial,group:toolGroup(serial),createdAt:tool?.createdAt||events[0].createdAt,eventIds:events.map(e=>e.id),...statusEngine(events)});else if(tool?.registered)state.tools.push({...tool,eventIds:[],...statusEngine([])});
   }
+  for(const proposal of toolNameProposals(state).filter(p=>!previous.tools.some(t=>t.serial===p.serial))){const tool=state.tools.find(t=>t.serial===proposal.serial);Object.assign(tool,{toolName:proposal.toolName,nameSource:'BHA',nameSourceDocumentId:proposal.nameSourceDocumentId,nameSourceDate:proposal.nameSourceDate});}
   state.bha=state.bha.filter(b=>b.documentId!==p.document.id);
   state.bhaMembers=state.bhaMembers.filter(m=>m.bhaId!==p.document.id);
   if(p.bha) {
@@ -108,6 +110,7 @@ export class DemoRepository {
   async deleteGroup(id,targetId,options){return this.catalogChange(state=>applyGroupRemoval(state,id,targetId,options));}
   async deleteGroupTools(id,options){return this.catalogChange(state=>applyGroupToolsRemoval(state,id,options));}
   async assignSerials(input){return this.catalogChange(state=>applyAssignments(state,input));}
+  async saveToolName(input){return this.catalogChange(state=>applyToolName(state,input));}
   async saveTool(input){return this.catalogChange(state=>applyTool(state,input));}
   async deleteTool(serial,options){return this.catalogChange(state=>applyToolRemoval(state,serial,options));}
   async saveSchedule(input){const entry=scheduleEntry(input);const commit=async()=>{const state=await this.load();state.scheduledEvents=state.scheduledEvents.filter(e=>e.id!==entry.id).concat(entry);localStorage.setItem(this.key,JSON.stringify(state));return entry;};return navigator.locks?navigator.locks.request('tooltrace-demo-write',commit):commit();}

@@ -35,5 +35,26 @@ export function bhaColumnCandidates(items) {
     const value=values.join(' ');
     return value&&/^\d+(?:[.,]\d+|\s+\d+\/\d+)?"?$/.test(value)?[[col.key,value]]:[];
   }));
-  return items.filter(i=>{const x=i.transform[4]+i.width/2;return i.str&&x>=left&&x<right&&i.transform[5]<header.transform[5]-8&&i.transform[5]>bottom+8&&validSerial(serialNormalizer(i.str));}).map(i=>({serial:serialNormalizer(i.str),rawSerial:i.str.trim(),cells:cells(i),line:items.filter(other=>other.str&&Math.abs(other.transform[5]-i.transform[5])<3).sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ')}));
+  const rows=items.filter(i=>{const x=i.transform[4]+i.width/2;return i.str&&x>=left&&x<right&&i.transform[5]<header.transform[5]-8&&i.transform[5]>bottom+8&&validSerial(serialNormalizer(i.str));}).sort((a,b)=>b.transform[5]-a.transform[5]);
+  const descriptions=bhaDescriptions(items,rows,header,bottom);
+  return rows.map(i=>({serial:serialNormalizer(i.str),rawSerial:i.str.trim(),cells:{...cells(i),...(descriptions.get(i)?{description:descriptions.get(i)}:{})},line:items.filter(other=>other.str&&Math.abs(other.transform[5]-i.transform[5])<3).sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ')}));
+}
+function bhaDescriptions(items,rows,header,bottom){
+ const result=new Map(),label=items.find(i=>/Descripci[oó]n/i.test(i.str)&&Math.abs(i.transform[5]-header.transform[5])<25),connection=items.find(i=>/Conexi[oó]n/i.test(i.str)&&Math.abs(i.transform[5]-header.transform[5])<25);
+ if(!label||!connection||!rows.length)return result;
+ const center=label.transform[4]+label.width/2,end=connection.transform[4]-2,start=center-(end-center);
+ const words=items.filter(i=>i.str?.trim()&&i.transform[4]+i.width/2>start&&i.transform[4]+i.width/2<end&&i.transform[5]<header.transform[5]-8&&i.transform[5]>bottom+8),used=new Set();
+ // Los bloques combinados que indican cantidad se asocian solo si el centro
+ // coincide con exactamente esa cantidad de filas contiguas.
+ for(const item of words){const count=Number(item.str.match(/^\((\d+)\)\s/)?.[1]);if(!(count>1&&count<=rows.length))continue;
+  const choices=rows.slice(0,rows.length-count+1).map((_,index)=>rows.slice(index,index+count)).map(block=>({block,distance:Math.abs(block.reduce((n,r)=>n+r.transform[5],0)/count-item.transform[5])})).sort((a,b)=>a.distance-b.distance);
+  if(choices[0].distance>header.height*.6||choices[1]?.distance<choices[0].distance+header.height*.5)continue;
+  for(const row of choices[0].block)result.set(row,item.str.trim().replace(/^\(\d+\)\s*/,''));used.add(item);
+ }
+ for(let index=0;index<rows.length;index++){const row=rows[index];if(result.has(row))continue;
+  const top=index?(rows[index-1].transform[5]+row.transform[5])/2:header.transform[5]-8,low=index<rows.length-1?(row.transform[5]+rows[index+1].transform[5])/2:bottom+8;
+  const parts=words.filter(i=>!used.has(i)&&!(Number(i.str.match(/^\((\d+)\)\s/)?.[1])>1)&&i.transform[5]<top&&i.transform[5]>=low).sort((a,b)=>b.transform[5]-a.transform[5]||a.transform[4]-b.transform[4]);
+  const text=parts.map(i=>i.str.trim()).join(' ').replace(/^\(1\)\s*/,'');if(text&&text.length<=160)result.set(row,text);
+ }
+ return result;
 }

@@ -4,10 +4,10 @@ import {groupId,groupInfo} from '../engine/toolCatalog.js';
 import {fieldDefinitions} from '../engine/fieldExtractor.js';
 import {matrixValidator} from '../engine/matrixValidator.js';
 const col=(label,type='text')=>({label,type});
-export function reportModel(data,{group='ALL',search='',from='',to='',status='ALL',pending=[]}={}) {
+export function reportModel(data,{group='ALL',search='',name='',from='',to='',status='ALL',pending=[]}={}) {
   const tool=serial=>data.tools.find(t=>t.serial===serial)||{serial};
   const groupName=serial=>groupInfo(data,tool(serial)).name;
-  const matches=serial=>toolMatches(tool(serial),data.events,{group,search,from,to,status});
+  const matches=serial=>toolMatches(tool(serial),data.events,{group,search,name,from,to,status});
   const tools=data.tools.filter(t=>matches(t.serial)).sort((a,b)=>a.serial.localeCompare(b.serial));
   const documents=new Map(data.documents.map(d=>[d.id,d]));
   const names={INSPECTION:'Inspección',REPAIR:'Reparación',BHA:'BHA'};
