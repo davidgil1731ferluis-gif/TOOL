@@ -4,10 +4,11 @@ import {groupId,groupInfo} from '../engine/toolCatalog.js';
 import {fieldDefinitions} from '../engine/fieldExtractor.js';
 import {matrixValidator} from '../engine/matrixValidator.js';
 const col=(label,type='text')=>({label,type});
-export function reportModel(data,{group='ALL',search='',name='',from='',to='',status='ALL',pending=[]}={}) {
-  const tool=serial=>data.tools.find(t=>t.serial===serial)||{serial};
+export function reportModel(data,{group='ALL',search='',name='',query='',from='',to='',status='ALL',minEvents='',maxEvents='',pending=[]}={}) {
+  const toolIndex=new Map(data.tools.map(t=>[t.serial,t])),bySerial=new Map();for(const event of data.events){if(!bySerial.has(event.serial))bySerial.set(event.serial,[]);bySerial.get(event.serial).push(event);}
+  const tool=serial=>toolIndex.get(serial)||{serial};
   const groupName=serial=>groupInfo(data,tool(serial)).name;
-  const matches=serial=>toolMatches(tool(serial),data.events,{group,search,name,from,to,status});
+  const matchCache=new Map();const matches=serial=>{if(!matchCache.has(serial))matchCache.set(serial,toolMatches(tool(serial),bySerial,{group,search,name,query,from,to,status,minEvents,maxEvents}));return matchCache.get(serial);};
   const tools=data.tools.filter(t=>matches(t.serial)).sort((a,b)=>a.serial.localeCompare(b.serial));
   const documents=new Map(data.documents.map(d=>[d.id,d]));
   const names={INSPECTION:'Inspección',REPAIR:'Reparación',BHA:'BHA'};
@@ -17,9 +18,9 @@ export function reportModel(data,{group='ALL',search='',name='',from='',to='',st
   for(const e of data.events.filter(e=>matches(e.serial)).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt||'').localeCompare(b.createdAt||'')||a.id.localeCompare(b.id)))grouped.get(e.serial).push(e);
   const eventColumns=[col('Fecha','date'),col('Tipo'),col('Empresa'),col('Reporte'),col('Resultado'),col('Detalles clave')];
   const eventValues=e=>{const f=normalizeComponentFields(e.type,e.fields);const keys=e.type==='INSPECTION'?[['body','Cuerpo'],['pin','PIN'],['box','BOX'],['findings','Hallazgos']]:e.type==='REPAIR'?[['workOrder','Orden'],['pin','PIN'],['box','BOX'],['machining','Maquinado']]:[['well','Pozo'],['phase','Fase']];return [e.date,names[e.type],f.issuer||'',f.certificateNumber||f.reportNumber||f.bhaNumber||'',e.type==='REPAIR'?'Operativa':e.type==='BHA'?'Uso en BHA':results[f.finalConformity]||f.finalConformity||'',keys.filter(([k])=>f[k]).map(([k,label])=>label+': '+f[k]).join(' · ')];};
-  const maxEvents=Math.max(0,...serials.map(serial=>grouped.get(serial).length));
-  if(2+maxEvents*eventColumns.length>16384)throw new Error('El historial de una herramienta supera las 16.384 columnas de Excel.');
-  const horizontal={name:'Historial por herramienta',columns:[col('Serial'),col('Grupo'),...Array.from({length:maxEvents},(_,i)=>eventColumns.map(c=>({...c,label:`Evento ${i+1} · ${c.label}`}))).flat()],rows:serials.map(serial=>{const events=grouped.get(serial);return [serial,groupName(serial),...Array.from({length:maxEvents},(_,i)=>events[i]?eventValues(events[i]):eventColumns.map(()=>'')).flat()];})};
+  const maxHistoryEvents=Math.max(0,...serials.map(serial=>grouped.get(serial).length));
+  if(2+maxHistoryEvents*eventColumns.length>16384)throw new Error('El historial de una herramienta supera las 16.384 columnas de Excel.');
+  const horizontal={name:'Historial por herramienta',columns:[col('Serial'),col('Grupo'),...Array.from({length:maxHistoryEvents},(_,i)=>eventColumns.map(c=>({...c,label:`Evento ${i+1} · ${c.label}`}))).flat()],rows:serials.map(serial=>{const events=grouped.get(serial);return [serial,groupName(serial),...Array.from({length:maxHistoryEvents},(_,i)=>events[i]?eventValues(events[i]):eventColumns.map(()=>'')).flat()];})};
   const sheets=[horizontal];
   for(const [type,name] of [['INSPECTION','Inspecciones'],['REPAIR','Reparaciones'],['BHA','BHA']]){
     const defs=fieldDefinitions[type];
@@ -28,7 +29,7 @@ export function reportModel(data,{group='ALL',search='',name='',from='',to='',st
   const waiting=[];
   const pendingDefs=[...new Map(Object.values(fieldDefinitions).flat().map(def=>[def[0],def])).values()];
   for(const d of pending){
-    if(!d.records?.length){if(group==='ALL'&&!search&&!from&&!to&&status==='ALL')waiting.push(['','',d.name,d.type,d.error||'Sin seriales detectados',...pendingDefs.map(()=>''),'']);continue;}
+    if(!d.records?.length){if(group==='ALL'&&!search&&!name&&!query&&!from&&!to&&status==='ALL'&&minEvents===''&&maxEvents==='')waiting.push(['','',d.name,d.type,d.error||'Sin seriales detectados',...pendingDefs.map(()=>''),'']);continue;}
     for(const r of d.records){if(!matches(r.serial))continue;const errors=[d.error,...matrixValidator(d.type,r)].filter(Boolean).join(' ').replace(/\b[a-zA-Z]+\b/g,key=>pendingDefs.find(([k])=>k===key)?.[1]||key);waiting.push([r.serial,groupName(r.serial),d.name,d.type,errors,...pendingDefs.map(([key])=>normalizeComponentFields(d.type,r.fields)[key]||''),[...new Set((r.evidence||[]).map(e=>e.page))].join(', ')]);}
   }
   if(waiting.length)sheets.push({name:'Por completar',columns:[...['Serial','Grupo','PDF de origen','Tipo','Datos por completar'].map(x=>col(x)),...pendingDefs.map(([,label])=>col(label)),col('Páginas')],rows:waiting});
