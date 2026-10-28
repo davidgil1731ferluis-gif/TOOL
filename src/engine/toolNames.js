@@ -21,12 +21,16 @@ export function applyToolName(previous,input){
 export function checkNameDocument(document,input){if(!document||document.type!=='BHA'||document.createdAt!==input.baseDocumentCreatedAt||(document.revision||0)!==input.baseDocumentRevision)throw new Error('El BHA cambió en otra sesión. Revisa la propuesta.');}
 // Solo seriales ya existentes y descripciones explícitas: nunca cambia eventos.
 export function toolNameProposals(data,extracted=[]){
- const candidates=[...data.events.filter(e=>e.type==='BHA'),...extracted.filter(e=>e.type==='BHA')].filter(e=>cleanToolName(e.fields?.description)&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||e.fields?.bhaDate||''));
+ const documents=new Map(data.documents.map(d=>[d.id,d])),bySerial=new Map();
+ for(const event of [...data.events,...extracted]){
+  if(event.type!=='BHA'||!cleanToolName(event.fields?.description)||!/^\d{4}-\d{2}-\d{2}$/.test(event.date||event.fields?.bhaDate||''))continue;
+  const day=event.date||event.fields.bhaDate,old=bySerial.get(event.serial);
+  if(!old||day>old.day)bySerial.set(event.serial,{day,event,names:new Set([descriptionName(event.fields.description)])});
+  else if(day===old.day)old.names.add(descriptionName(event.fields.description));
+ }
  return data.tools.filter(t=>!cleanToolName(t.toolName)).flatMap(tool=>{
-  const own=candidates.filter(e=>e.serial===tool.serial).sort((a,b)=>(b.date||b.fields.bhaDate).localeCompare(a.date||a.fields.bhaDate));if(!own.length)return [];
-  const latest=own[0],day=latest.date||latest.fields.bhaDate,names=[...new Set(own.filter(e=>(e.date||e.fields.bhaDate)===day).map(e=>descriptionName(e.fields.description)))];
-  if(names.length!==1||!names[0]||names[0].length>160)return [];
-  const document=data.documents.find(d=>d.id===latest.documentId);if(!document||document.type!=='BHA')return [];
-  return [{serial:tool.serial,toolName:names[0],baseName:tool.toolName||'',baseCreatedAt:tool.createdAt,nameSource:'BHA',nameSourceDocumentId:latest.documentId,nameSourceDate:day,baseDocumentCreatedAt:document.createdAt,baseDocumentRevision:document.revision||0}];
+  const entry=bySerial.get(tool.serial);if(!entry||entry.names.size!==1)return [];
+  const toolName=[...entry.names][0],document=documents.get(entry.event.documentId);if(!toolName||toolName.length>160||!document||document.type!=='BHA')return [];
+  return [{serial:tool.serial,toolName,baseName:tool.toolName||'',baseCreatedAt:tool.createdAt,nameSource:'BHA',nameSourceDocumentId:document.id,nameSourceDate:entry.day,baseDocumentCreatedAt:document.createdAt,baseDocumentRevision:document.revision||0}];
  }).sort((a,b)=>a.serial.localeCompare(b.serial));
 }

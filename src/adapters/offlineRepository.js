@@ -1,5 +1,6 @@
 import {applyToolName} from '../engine/toolNames.js';
 import {applyGroup,applyTool,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,applyAssignments,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
+import {automaticToolNames} from '../engine/automaticNames.js';
 import {prepare,applyCommit,applyDocumentRemoval,emptyState} from './repository.js';
 import {scheduleEntry} from '../engine/calendar.js';
 import {statusEngine} from '../engine/statusEngine.js';
@@ -21,6 +22,8 @@ export function overlayPending(cloud,local,operations){
 
  for(const op of operations.filter((o,index)=>o.kind==='saveToolName'&&!operations.slice(index+1).some(next=>next.kind==='saveTool'&&next.serial===o.serial))){const current=tools.get(op.serial);if(current&&current.createdAt===op.entry.baseCreatedAt)tools.set(op.serial,{...current,toolName:op.entry.toolName,nameSource:op.entry.nameSource,nameSourceDocumentId:op.entry.nameSourceDocumentId,nameSourceDate:op.entry.nameSourceDate});}
  state.tools=[...new Set([...state.events.map(e=>e.serial),...[...tools.values()].filter(t=>t.registered).map(t=>t.serial)])].map(serial=>{const events=state.events.filter(e=>e.serial===serial);return {...tools.get(serial),id:serial,serial,group:toolGroup(serial),eventIds:events.map(e=>e.id),...statusEngine(events)};});
+ const newReports=new Set(operations.filter(o=>o.kind==='save'&&!o.options?.editing).map(o=>o.documentId));
+ for(const proposal of automaticToolNames(state,state.events.filter(e=>newReports.has(e.documentId)))){const {serial,...fields}=proposal;Object.assign(state.tools.find(t=>t.serial===serial),fields);}
  const agenda=new Set(operations.filter(o=>['saveSchedule','deleteSchedule'].includes(o.kind)).map(o=>o.scheduleId));
  state.scheduledEvents=state.scheduledEvents.filter(e=>!agenda.has(e.id)).concat(local.scheduledEvents.filter(e=>agenda.has(e.id)));
  return state;

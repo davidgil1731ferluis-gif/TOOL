@@ -1,6 +1,6 @@
 import {bhaSpreadsheetPage} from './bhaSpreadsheet.js';
 import {read,utils,SSF} from 'xlsx';
-import {tablePage,columnKey} from './tableExtractor.js';
+import {tablePage,columnKey,tableHeader} from './tableExtractor.js';
 import {decodeText} from './fileFormats.js';
 export function spreadsheetExtractor(bytes,name){
   const textFile=/\.(csv|tsv)$/i.test(name);
@@ -20,7 +20,7 @@ export function spreadsheetExtractor(bytes,name){
     const rows=utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
     cells+=rows.reduce((n,r)=>n+r.length,0);if(cells>200000)throw new Error('El archivo contiene demasiadas celdas.');
     // Prefer the displayed cell for serials: preserves an Excel format such as 000000.
-    const serialColumns=[...new Set(rows.flatMap(row=>row.flatMap((v,c)=>columnKey(v)==='serial'?[c]:[])))];
+    const header=tableHeader(rows);const serialColumns=[...new Set([...rows.flatMap(row=>row.flatMap((v,c)=>columnKey(v)==='serial'?[c]:[])),...(header?header.columns.flatMap((key,c)=>key==='serial'?[c]:[]):[])])];
     for(const col of serialColumns)for(let r=0;r<rows.length;r++){const cell=ws[utils.encode_cell({r,c:col})];if(cell?.t==='n'){const displayed=String(cell.w||SSF.format(cell.z||'0',cell.v)).trim();rows[r][col]=/^[A-Z0-9._ -]+$/i.test(displayed)?displayed:String(cell.v);}}
     return bhaSpreadsheetPage(rows,i+1,name,ws)||tablePage(rows,i+1,name);
   });

@@ -1,6 +1,5 @@
 export function statusEngine(events) {
-  const technical=events.filter(e=>e.type!=='BHA').sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
-  const last=technical.at(-1);
+  let last;for(const event of events){if(event.type==='BHA')continue;const order=last?(event.date.localeCompare(last.date)||String(event.createdAt||'').localeCompare(String(last.createdAt||''))||event.id.localeCompare(last.id)):1;if(order>=0)last=event;}
   return {status:last?(last.type==='REPAIR'?'OPERATIVA':last.fields.finalConformity):'SIN_ESTADO_TECNICO',statusDate:last?.date||'',statusCreatedAt:last?.createdAt||'',statusEventId:last?.id||''};
 }
 export function applyStatus(tool,event) {

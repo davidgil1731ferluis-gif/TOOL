@@ -7,5 +7,5 @@ export function toolMatches(tool,events,{group='ALL',search='',name='',from='',t
  if(name&&!nameKey(tool.toolName).includes(nameKey(name)))return false;
  if(status!=='ALL'&&(tool.status||'SIN_ESTADO_TECNICO')!==status)return false;
  if(from&&to&&from>to)return false;
- return !(from||to)||events.some(e=>e.serial===tool.serial&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')&&(!from||e.date>=from)&&(!to||e.date<=to));
+ return !(from||to)||(events instanceof Map?events.get(tool.serial)||[]:events).some(e=>e.serial===tool.serial&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')&&(!from||e.date>=from)&&(!to||e.date<=to));
 }

@@ -1,4 +1,5 @@
 import {serialNormalizer,validSerial} from './serialNormalizer.js';
+import {pdfRows} from './pdfRows.js';
 export function coalescePdfItems(items){
  const text=items.filter(i=>i.str?.trim());if(text.length<80||text.filter(i=>i.str.trim().length===1).length/text.length<.55)return items;
  const rows=[],vertical=[];
@@ -7,13 +8,7 @@ export function coalescePdfItems(items){
 }
 export function pdfLines(items) {
   items=coalescePdfItems(items);
-  const lines=[];
-  for(const item of items.filter(i=>i.str)) {
-    const y=item.transform[5];let line=lines.find(l=>Math.abs(l.y-y)<2.5);
-    if(!line){line={y,items:[]};lines.push(line);}
-    line.items.push({x:item.transform[4],str:item.str});
-  }
-  return lines.sort((a,b)=>b.y-a.y).map(l=>l.items.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n');
+  return pdfRows(items).map(l=>l.items.map(i=>i.str).join(' ')).join('\n');
 }
 export function bhaColumnCandidates(items) {
   items=coalescePdfItems(items);
@@ -37,7 +32,7 @@ export function bhaColumnCandidates(items) {
   }));
   const rows=items.filter(i=>{const x=i.transform[4]+i.width/2;return i.str&&x>=left&&x<right&&i.transform[5]<header.transform[5]-8&&i.transform[5]>bottom+8&&validSerial(serialNormalizer(i.str));}).sort((a,b)=>b.transform[5]-a.transform[5]);
   const descriptions=bhaDescriptions(items,rows,header,bottom);
-  return rows.map(i=>({serial:serialNormalizer(i.str),rawSerial:i.str.trim(),cells:{...cells(i),...(descriptions.get(i)?{description:descriptions.get(i)}:{})},line:items.filter(other=>other.str&&Math.abs(other.transform[5]-i.transform[5])<3).sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ')}));
+  return rows.map(i=>({serial:serialNormalizer(i.str),rawSerial:i.str.trim(),cells:{...cells(i),...(descriptions.get(i)?{description:descriptions.get(i)}:{})},...(descriptions.get(i)?{nameEvidence:{serial:serialNormalizer(i.str),value:descriptions.get(i),method:'pdf-columns'}}:{}),line:items.filter(other=>other.str&&Math.abs(other.transform[5]-i.transform[5])<3).sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ')}));
 }
 function bhaDescriptions(items,rows,header,bottom){
  const result=new Map(),label=items.find(i=>/Descripci[oó]n/i.test(i.str)&&Math.abs(i.transform[5]-header.transform[5])<25),connection=items.find(i=>/Conexi[oó]n/i.test(i.str)&&Math.abs(i.transform[5]-header.transform[5])<25);

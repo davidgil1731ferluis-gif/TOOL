@@ -1,4 +1,5 @@
 import {applyToolName,toolNameProposals} from '../engine/toolNames.js';
+import {automaticToolNames} from '../engine/automaticNames.js';
 import {normalizeComponentFields} from '../engine/componentStates.js';
 import {applyGroup,applyTool,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,applyAssignments,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
 import {serialNormalizer} from '../engine/serialNormalizer.js';
@@ -60,6 +61,7 @@ export function applyCommit(previous,prepared,{editing=false,baseRevision=0}={})
     if(state.events.some(e=>e.id===event.id&&e.documentId!==p.document.id)) throw new Error(`Ya existe un evento de ${event.serial} con ese reporte y fecha.`);
     const source=oldEvents.find(e=>e.id===event.sourceEventId)||oldEvents.find(e=>e.id===event.id);
     event.createdAt=source?.createdAt||event.createdAt;
+    if(editing&&source?.nameEvidence&&!event.nameEvidence&&source.serial===event.serial&&source.fields.description===event.fields.description)event.nameEvidence=structuredClone(source.nameEvidence);
     if(editing)event.updatedAt=p.document.createdAt;
     delete event.sourceEventId;
   }
@@ -72,7 +74,13 @@ export function applyCommit(previous,prepared,{editing=false,baseRevision=0}={})
     state.tools=state.tools.filter(t=>t.serial!==serial);
     if(events.length) state.tools.push({...tool,id:serial,serial,group:toolGroup(serial),createdAt:tool?.createdAt||events[0].createdAt,eventIds:events.map(e=>e.id),...statusEngine(events)});else if(tool?.registered)state.tools.push({...tool,eventIds:[],...statusEngine([])});
   }
-  for(const proposal of toolNameProposals(state).filter(p=>!previous.tools.some(t=>t.serial===p.serial))){const tool=state.tools.find(t=>t.serial===proposal.serial);Object.assign(tool,{toolName:proposal.toolName,nameSource:'BHA',nameSourceDocumentId:proposal.nameSourceDocumentId,nameSourceDate:proposal.nameSourceDate});}
+  if(!editing){
+    const automatic=automaticToolNames(state,p.events),toolIndex=new Map(state.tools.map(t=>[t.serial,t]));
+    for(const proposal of automatic){const {serial,...fields}=proposal;Object.assign(toolIndex.get(serial),fields);}
+    if(automatic.length)p.document.autoNamedSerials=automatic.map(p=>p.serial);
+  }
+  const existingSerials=new Set(previous.tools.map(t=>t.serial));
+  for(const proposal of toolNameProposals(state).filter(p=>!existingSerials.has(p.serial))){const tool=state.tools.find(t=>t.serial===proposal.serial);Object.assign(tool,{toolName:proposal.toolName,nameSource:'BHA',nameSourceDocumentId:proposal.nameSourceDocumentId,nameSourceDate:proposal.nameSourceDate});}
   state.bha=state.bha.filter(b=>b.documentId!==p.document.id);
   state.bhaMembers=state.bhaMembers.filter(m=>m.bhaId!==p.document.id);
   if(p.bha) {

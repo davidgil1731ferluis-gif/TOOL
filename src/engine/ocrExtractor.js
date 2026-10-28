@@ -8,7 +8,7 @@ export async function createOCR(onProgress=()=>{}){
     async read(image,page=1){
       const {data}=await worker.recognize(image,{}, {text:true,blocks:true});const items=[];
       for(const block of data.blocks||[])for(const paragraph of block.paragraphs||[])for(const line of paragraph.lines||[]){let group;for(const word of line.words||[]){if(group&&word.bbox.x0-group.end<Math.max(16,(word.bbox.y1-word.bbox.y0)*.8)){group.str+=' '+word.text;group.end=word.bbox.x1;group.width=group.end-group.transform[4];}else{group={str:word.text,end:word.bbox.x1,width:word.bbox.x1-word.bbox.x0,height:word.bbox.y1-word.bbox.y0,transform:[1,0,0,1,word.bbox.x0,-line.bbox.y0]};items.push(group);}}}
-      const table=coordinateTable(items,page);return {page,text:data.text,method:'ocr',ocrConfidence:data.confidence,...(table?{structuredRecords:table.structuredRecords,structuredType:table.structuredType,mixedTypes:table.mixedTypes}:{})};
+      const table=coordinateTable(items,page);return {page,text:data.text,method:'ocr',ocrConfidence:data.confidence,...(table?{structuredRecords:table.structuredRecords,structuredType:table.structuredType,mixedTypes:table.mixedTypes,sourceWarnings:table.sourceWarnings||[]}:{})};
     },
     close:()=>worker.terminate()
   };

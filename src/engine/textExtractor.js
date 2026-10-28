@@ -5,13 +5,14 @@ import {inspectionCells} from './inspectionCells.js';
 import {premiumInspectionCells,tuboscopeInspectionCells} from './inspectionFormats.js';
 import {fileKind,decodeText} from './fileFormats.js';
 import {coordinateTable} from './coordinateTable.js';
+import {readSpreadsheet} from './spreadsheetReader.js';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-export const EXTRACTION_VERSION=6;
+export const EXTRACTION_VERSION=7;
 export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPage=async()=>{}}={}) {
   if (file.size > 25 * 1024 * 1024) throw new Error('El archivo supera 25 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind=fileKind(file.name,bytes);
-  if(kind==='spreadsheet')return (await import('./spreadsheetExtractor.js')).spreadsheetExtractor(bytes,file.name);
+  if(kind==='spreadsheet'){onProgress('Leyendo hoja de cálculo…');return readSpreadsheet(bytes,file.name);}
   if(kind==='text'){const text=decodeText(bytes);if(text.length>2000000)throw new Error('El texto supera dos millones de caracteres.');return {text,pages:[{page:1,text}]};}
   if(kind==='image'&&cachedPages[0]?.method==='ocr')return {text:cachedPages[0].text,pages:cachedPages};
   let ocr;const getOCR=async()=>ocr||(ocr=await (await import('./ocrExtractor.js')).createOCR(p=>onProgress('Leyendo texto de imagen: '+p+' %')));
@@ -31,10 +32,11 @@ export async function textExtractor(file,{onProgress=()=>{},cachedPages=[],onPag
         const original=pdfPage.getViewport({scale:1});const scale=Math.min(2.5,2600/Math.max(original.width,original.height));const viewport=pdfPage.getViewport({scale});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await pdfPage.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
         const recognized=await (await getOCR()).read(canvas,n);pages.push({...recognized,text:[text,recognized.text].filter(Boolean).join('\n')});canvas.width=canvas.height=0;
       }else {
-        const table=/TOTAL\s*QC|Tuboscope|SAIS-OP-F-53R|COMPONENTES? BHA/i.test(text)?null:coordinateTable(content.items,n);
-        pages.push({page:n,text,method:'pdf-text',...(table?{structuredRecords:table.structuredRecords,structuredType:table.structuredType,mixedTypes:table.mixedTypes}:{}),bhaCandidates:bhaColumnCandidates(content.items),inspectionCandidates:inspectionCells(content.items)||premiumInspectionCells(content.items,text)||tuboscopeInspectionCells(text)});
+        const bhaCandidates=bhaColumnCandidates(content.items);
+        const table=/TOTAL\s*QC|Tuboscope|SAIS-OP-F-53R/i.test(text)||bhaCandidates?.length?null:coordinateTable(content.items,n);
+        pages.push({page:n,text,method:'pdf-text',...(table?{structuredRecords:table.structuredRecords,structuredType:table.structuredType,mixedTypes:table.mixedTypes,sourceWarnings:table.sourceWarnings||[]}:{}),bhaCandidates,inspectionCandidates:inspectionCells(content.items)||premiumInspectionCells(content.items,text)||tuboscopeInspectionCells(text)});
       }
-      await onPage([...pages]);
+      pdfPage.cleanup();await onPage([...pages]);
     }
     const text=pages.map(p=>p.text).join('\n\n');
     if(text.trim().length<10) throw new Error('No se pudo leer texto suficiente. El original queda guardado para completar sus datos.');

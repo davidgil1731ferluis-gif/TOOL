@@ -1,5 +1,17 @@
 # ToolTrace V5.2 · Steep
 
+## Extracción, nombres automáticos y diseño renovado
+
+Las nuevas cargas de PDF, Excel, XLS, ODS y CSV reconocen más encabezados de serial y descripción, incluidas cabeceras divididas en varias filas y fragmentos de texto en columnas PDF. Se conserva la evidencia de celda/columna que vincula el nombre a su serial. La versión del extractor es 7: Reanalizar pendientes utiliza el lector nuevo; no se reescriben los reportes ya guardados.
+
+Al guardar un reporte nuevo y válido, una descripción inequívoca de su tabla puede completar el nombre vacío de una herramienta existente. No reemplaza nombres actuales ni decisiones manuales, no cambia grupos/tipos, y conserva las reglas de estado técnico. No aplica retroactivamente al abrir la app ni al editar reportes antiguos. Si hay nombres contradictorios en la fecha más reciente, una fuente antigua, OCR o una asociación sin evidencia suficiente, se mantiene la revisión manual. Las herramientas nuevas conservan el comportamiento anterior de nombres desde BHA; las nuevas fuentes verificadas también pueden nombrarlas. La conformidad, los conteos y los campos obligatorios siguen validándose por separado.
+
+El reporte conserva los seriales nombrados automáticamente y la procedencia se guarda con el evento. Las asignaciones se calculan dentro de la misma operación que guarda el reporte, también sin conexión; al sincronizar no se sustituyen nombres que otro dispositivo haya corregido.
+
+Excel se procesa en un worker para no bloquear la interfaz. Se indexan las filas PDF, las propuestas de nombres y las consultas por serial; el estado técnico se calcula en una pasada. El progreso de lectura se actualiza sin reconstruir todas las tablas. El diseño añade superficies claras, controles de mayor contraste, tarjetas, navegación fija y animaciones breves; respeta movimiento reducido y la vista móvil. El modelo sigue siendo compatible con las reglas de Firebase existentes.
+
+Verificación y límites: VERIFICACION-MOTOR-DISENO.md. No se promete reconocer cualquier formato o texto ilegible ni se utiliza un porcentaje de cobertura como garantía de exactitud.
+
 ## Edición y grupos sin salir de la pantalla (27 de octubre de 2026)
 
 - En Nueva herramienta y Editar herramienta, selecciona un grupo existente o despliega **Nuevo grupo**. Indica nombre y color y pulsa **Crear grupo**. Se conserva el serial, nombre y tipo escritos; pulsa **Guardar herramienta** para completar la asignación.
