@@ -1,5 +1,14 @@
 # ToolTrace V5.2 · Steep
 
+## Edición y grupos sin salir de la pantalla (27 de octubre de 2026)
+
+- En Nueva herramienta y Editar herramienta, selecciona un grupo existente o despliega **Nuevo grupo**. Indica nombre y color y pulsa **Crear grupo**. Se conserva el serial, nombre y tipo escritos; pulsa **Guardar herramienta** para completar la asignación.
+- El grupo se crea al confirmar esa acción y se conserva aunque canceles después la edición de la herramienta. Los nombres vacíos o duplicados se muestran dentro del formulario. Si has escrito un grupo nuevo, debes crearlo o cancelar ese subformulario antes de guardar la herramienta.
+- Nueva herramienta preselecciona el grupo que estés consultando. En Gestionar grupos, cada grupo ofrece **Ver herramientas**, **Nueva herramienta** y **Añadir seriales**, junto a las acciones anteriores. Ver herramientas muestra ese grupo sin filtros de búsqueda previos.
+- Guardar, cancelar o pulsar Escape en una acción abierta desde el gestor regresa al listado de grupos. Las acciones de guardar/cancelar permanecen accesibles al desplazarse dentro del formulario.
+- Se utilizan los repositorios y la cola sin conexión existentes. No cambia el modelo de datos ni requiere nuevas reglas de Firebase. Los originales y los historiales mantienen su funcionamiento.
+- Verificación: 114 pruebas existentes aprobadas, compilación de producción y nueve escenarios de navegador con datos de demostración aislados. Consulta VERIFICACION-FLUJOS.md. Los cambios se publican con el flujo existente de GitHub Pages.
+
 Aplicación web/PWA en español para asociar inspecciones, reparaciones y BHA a cada serial. HTML, CSS y JavaScript modular, Firebase Authentication y Firestore, con publicación estática en GitHub Pages.
 
 ## Carga de archivos y reconocimiento ampliado
