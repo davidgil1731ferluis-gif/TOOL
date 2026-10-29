@@ -1,0 +1,74 @@
+/* Shared dialog surfaces. Presentation only: content and actions remain in their original DOM. */
+dialog{
+ --dialog-line:#dce9e3;
+ background:#fcfefd;color:#183f43;border:1px solid #ffffffd9;border-radius:28px;
+ padding:30px;max-height:90svh;box-shadow:0 32px 100px #062e3c42,0 5px 20px #062e3c1a;
+ scrollbar-width:thin;scrollbar-color:#96b8ab #edf4ef;overscroll-behavior:contain;
+}
+dialog.action-dialog{padding:30px;border-radius:28px;border-color:#ffffffd9;box-shadow:0 32px 100px #062e3c42,0 5px 20px #062e3c1a}
+dialog::backdrop,dialog.action-dialog::backdrop{background:#0c2c38a3;backdrop-filter:blur(7px)}
+dialog>h2:first-child,dialog>.panel-title:first-child{
+ margin:-30px -30px 22px;padding:28px 30px 26px;
+ background:radial-gradient(ellipse at 100% 0%,#b9e4d566,transparent 65%),linear-gradient(115deg,#eef8f3,#f8fcfa);
+ border-bottom:1px solid var(--dialog-line);border-radius:27px 27px 0 0;
+}
+dialog>h2:first-child,dialog>.panel-title:first-child h2{font-size:clamp(23px,2.2vw,29px);font-weight:650;letter-spacing:-.035em;line-height:1.25;color:#173e42;overflow-wrap:anywhere}
+dialog>h2:first-child:before{content:'';display:inline-block;width:5px;height:.85em;margin-right:12px;border-radius:4px;background:linear-gradient(#20ad87,#087e76);vertical-align:-.02em}
+dialog>p{font-size:13px;line-height:1.7;color:#53746b}
+dialog .kpi-detail-context,dialog .bulk-count{display:flex;align-items:center;gap:9px;width:fit-content;max-width:100%;margin:0 0 20px;padding:9px 13px;border:1px solid #dcebe3;border-radius:10px;background:#f0f7f3;font-size:12px;color:#3f6e5e}
+dialog .kpi-detail-context:before,dialog .bulk-count:before{content:'';width:7px;height:7px;border-radius:50%;background:#139878;flex:none;box-shadow:0 0 0 3px #13987813}
+dialog .table-wrap{border:1px solid var(--dialog-line);border-radius:15px;background:#fff;scrollbar-width:thin;scrollbar-color:#8daea0 #edf4ef;overscroll-behavior:contain}
+dialog .table-wrap::-webkit-scrollbar{width:8px;height:8px}
+dialog .table-wrap::-webkit-scrollbar-track{background:#edf4ef;border-radius:8px}
+dialog .table-wrap::-webkit-scrollbar-thumb{background:#8daea0;border:2px solid #edf4ef;border-radius:8px}
+dialog table{font-size:13px}
+dialog th{padding:14px 16px;background:#eaf3ee;color:#56776a;font-size:11px;font-weight:600;letter-spacing:.02em;border-bottom:1px solid #d6e6dc}
+dialog td{padding:14px 16px;border-bottom:1px solid #e5eee9;line-height:1.55;white-space:normal;overflow-wrap:anywhere;color:#24494c}
+dialog tbody tr:nth-child(even){background:#f7faf8}
+dialog tbody tr:last-child td{border-bottom:0}
+dialog tbody tr:hover{background:#edf7f1}
+dialog .serial-link{display:inline-flex;text-align:left;max-width:100%;padding:6px 9px;margin:-3px 0;border:1px solid #cfe4d9;border-radius:8px;background:#edf7f1;color:#087160;font-size:12px;font-weight:650;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+dialog button:focus-visible,dialog a:focus-visible,dialog summary:focus-visible{outline:2px solid #168d78;outline-offset:3px}
+dialog .serial-link:hover{background:#dcefe4;border-color:#8ac3ab;text-decoration:none}
+dialog.kpi-detail-dialog{width:min(900px,calc(100vw - 32px));max-width:min(900px,calc(100vw - 32px))}
+dialog.kpi-detail-dialog .table-wrap{max-height:min(49svh,440px);margin-bottom:23px}
+dialog.kpi-detail-dialog th{position:sticky;top:0;z-index:1}
+dialog.kpi-detail-dialog td:first-child{width:25%}
+dialog.kpi-detail-dialog td:nth-child(2){width:38%}
+dialog .secondary{background:#fff;border:1px solid #c9ddd2;border-radius:11px;color:#285c53;box-shadow:0 2px 4px #143e3505}
+dialog .secondary:hover{background:#edf7f1;border-color:#88bda6}
+dialog .primary{border-radius:11px;background:#087f72;border-color:#087f72;box-shadow:0 4px 10px #087f721c}
+dialog .primary:hover{background:#06695f;border-color:#06695f}
+dialog>button[data-action=dismiss-dialog]:last-child{display:flex;width:fit-content;margin-left:auto;min-width:100px}
+dialog>.row-actions:last-child,dialog form>.row-actions:last-of-type{gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--dialog-line);justify-content:flex-end}
+dialog form>label{margin-bottom:18px;font-size:12px;font-weight:550;color:#42665b}
+dialog form>label input:not([type=hidden]),dialog form>label select,dialog form>label textarea{border-color:#d5e5db;border-radius:11px;background:#fff;box-shadow:0 2px 4px #153d3003}
+dialog form>label input:focus,dialog form>label select:focus,dialog form>label textarea:focus{border-color:#329f82;outline:2px solid #58b79830;outline-offset:1px}
+dialog .inline-group{border:1px solid #d8e9df;border-radius:13px;background:#f2f8f4}
+dialog .group-manager article{border:1px solid #dce9e1;background:#fff;border-radius:14px;padding:16px;margin-bottom:12px}
+dialog .group-manager article>div:first-child{gap:12px;align-items:center}
+dialog .group-manager .row-actions{gap:7px}
+dialog .group-manager .subtle{border:1px solid #e0ebe4;border-radius:8px;padding:7px 9px;background:#f7faf8}
+dialog .danger-button{color:#a53b4b!important;border-color:#e8bdc6!important;background:#fff7f8!important}
+dialog .primary.danger-button{color:#fff!important;background:#ae3d51!important;border-color:#ae3d51!important}
+dialog [role=alert]:not(:empty){color:#a13a4d}
+.chart-card{border:1px solid #cfe2d8;background:#fcfefd;border-radius:19px;box-shadow:0 14px 40px #123e3629}
+.chart-card-heading{padding-bottom:12px;border-bottom:1px solid #deebe3;color:#234f45}
+.chart-card article{border-color:#e1ece5}
+@media(prefers-reduced-motion:no-preference){dialog[open],dialog.action-dialog[open]{animation:tt-dialog .2s cubic-bezier(.2,.7,.3,1)}}
+@media(max-width:650px){
+ dialog,dialog.action-dialog{padding:20px;border-radius:22px;max-width:calc(100vw - 24px);max-height:91svh}
+ dialog>h2:first-child,dialog>.panel-title:first-child{margin:-20px -20px 19px;padding:23px 20px 21px;border-radius:21px 21px 0 0}
+ dialog>h2:first-child,dialog>.panel-title:first-child h2{font-size:23px}
+ dialog.kpi-detail-dialog{width:calc(100vw - 24px)}
+ dialog.kpi-detail-dialog table{table-layout:fixed;width:100%;min-width:0}
+ dialog.kpi-detail-dialog th,dialog.kpi-detail-dialog td{padding:11px 9px;font-size:12px;min-width:0}
+ dialog.kpi-detail-dialog .serial-link{font-size:12px;padding:6px}
+ dialog.kpi-detail-dialog .table-wrap{max-height:48svh;border-radius:12px}
+ dialog.kpi-detail-dialog td:first-child{width:auto}
+ dialog.kpi-detail-dialog td:nth-child(2){width:auto}
+ dialog>.row-actions:last-child,dialog form>.row-actions:last-of-type{flex-wrap:wrap}
+ dialog>.row-actions:last-child>button,dialog form>.row-actions:last-of-type>button{flex:1}
+ dialog .group-manager article{padding:13px}
+ dialog .kpi-detail-context,dialog .bulk-count{font-size:11px;padding:8px 10px}
+}

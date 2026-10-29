@@ -14,6 +14,7 @@ import {chartView,calendarView,scheduleForm,localDay} from './views/calendarView
 import './style.css';
 import './steep.css';
 import './modern.css';
+import './dialogs.css';
 import {toolGroup} from './engine/toolGroup.js';
 import {reportModel} from './export/reportModel.js';
 import {downloadExcel} from './export/xlsx.js';
