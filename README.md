@@ -1,5 +1,15 @@
 # ToolTrace V5.2 · Steep
 
+## Grupos y subgrupos (29 de octubre de 2026)
+
+Cada grupo puede contener subgrupos con nombre y color propios. Las herramientas actuales mantienen su clasificación sin migraciones; el subgrupo es opcional. Nueva/Editar herramienta, Asignar grupo de la selección múltiple y Añadir seriales incorporan los mismos selectores y creación de grupo/subgrupo RGB sin salir del formulario. Crear grupo independiente también permite elegir un padre.
+
+El gestor organiza los subgrupos debajo de su grupo, con cantidades y acciones directas. Los filtros de Herramientas distinguen Todos, Sin subgrupo y cada subgrupo. La selección múltiple preselecciona la clasificación común y muestra el destino al guardar. Cambiar padre elimina únicamente una selección incompatible; no modifica nombres ni reportes.
+
+Todas las hojas del Excel incluyen **Grupo** y **Subgrupo** en columnas contiguas. Excel de esta vista combina estos filtros y conserva el historial completo de las herramientas elegidas. Eliminar un subgrupo traslada sus seriales a Sin subgrupo o a un hermano, conservando la información. Los padres con subgrupos están protegidos contra eliminaciones que dejarían referencias huérfanas.
+
+La cola conserva las asignaciones sin conexión, con comprobación de generaciones y pertenencia al sincronizar. Las reglas de Firestore de esta entrega deben publicarse antes del frontend; amplían la clasificación sin ampliar el acceso a datos ajenos. Validación: 180 pruebas automatizadas, once escenarios de navegador con almacenamiento aislado, Excel descargado y configuración/compilación de producción. Ver VERIFICACION-SUBGRUPOS.md.
+
 ## Indicadores y selección múltiple (29 de octubre de 2026)
 
 El resumen incluye disponibilidad técnica, reparables/fuera de servicio, antigüedad de inspección y reparaciones recurrentes. Se calculan desde los registros del proyecto, con detalles por serial y periodos ajustables. Se renuevan cada minuto mientras el resumen está abierto y al recuperar foco/conexión; la caché y los cambios pendientes se identifican. No se guardan cifras simuladas ni se interpreta la antigüedad como vencimiento. Un proyecto vacío muestra — para disponibilidad.

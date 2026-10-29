@@ -5,16 +5,21 @@ import {statusEngine} from './statusEngine.js';
 import {confirmCount} from './countValidator.js';
 export const defaultGroups=[{id:'HWDP',name:'HWDP',color:'#2563eb'},{id:'OTRAS',name:'Otras',color:'#a85516'}];
 export const groupId=tool=>tool?.groupId||toolGroup(tool?.serial||'');
-export const groups=data=>[...defaultGroups,...(data.toolGroups||[]).filter(g=>!defaultGroups.some(d=>d.id===g.id))];
+export const allGroups=data=>[...defaultGroups,...(data.toolGroups||[]).filter(g=>!defaultGroups.some(d=>d.id===g.id))];
+export const groups=data=>allGroups(data).filter(g=>!g.parentId);
+export const subgroups=(data,parentId)=>allGroups(data).filter(g=>g.parentId===parentId).sort((a,b)=>a.name.localeCompare(b.name));
+export const subgroupInfo=(data,tool)=>subgroups(data,groupId(tool)).find(g=>g.id===tool?.subgroupId)||null;
 export const groupInfo=(data,tool)=>groups(data).find(g=>g.id===groupId(tool))||defaultGroups[1];
 export function groupEntry(input){
- const name=String(input.name||'').trim().replace(/\s+/g,' '),color=String(input.color||'').toLowerCase();
- if(!name||name.length>60)throw new Error('El grupo debe tener un nombre de 1 a 60 caracteres.');
+ const name=String(input.name||'').trim().replace(/\s+/g,' '),color=String(input.color||'').toLowerCase(),parentId=String(input.parentId||'');
+ if(!name||name.length>60)throw new Error('El nombre debe tener de 1 a 60 caracteres.');
  if(!/^#[0-9a-f]{6}$/.test(color))throw new Error('Selecciona un color válido.');
- if(defaultGroups.some(g=>g.name.toLowerCase()===name.toLowerCase()))throw new Error('Ese grupo ya existe.');
- // El identificador depende del nombre para evitar duplicados entre dispositivos.
+ if(!parentId&&defaultGroups.some(g=>g.name.toLowerCase()===name.toLowerCase()))throw new Error('Ese grupo ya existe.');
  const encoded=Array.from(name.toLocaleLowerCase()).map(c=>c.codePointAt(0).toString(16)).join('_');
- return {id:'g_'+encoded,name,color,createdAt:input.createdAt||new Date().toISOString()};
+ const prefix=parentId?(parentId==='HWDP'?'0':parentId==='OTRAS'?'1':'2_'+parentId.slice(2))+'__':'';
+ if(parentId&&!['HWDP','OTRAS'].includes(parentId)&&!/^g_[0-9a-f_]{1,500}$/.test(parentId))throw new Error('El grupo principal ya no está disponible.');
+ const id='g_'+prefix+encoded;if(id.length>1002)throw new Error('El nombre de la clasificación es demasiado largo.');
+ return {id,name,color,...(parentId?{parentId}:{}),createdAt:input.createdAt||new Date().toISOString()};
 }
 export function toolEntry(previous,input,data){
  if(input.requireExisting&&(!previous||previous.createdAt!==input.baseCreatedAt))throw new Error('La herramienta cambió en otra sesión o ya no está disponible. Revisa la selección.');
@@ -22,9 +27,12 @@ export function toolEntry(previous,input,data){
  if(!validSerial(serial))throw new Error('Escribe un serial válido de 3 a 64 caracteres.');
  if(!groups(data).some(g=>g.id===selected))throw new Error('El grupo ya no está disponible.');
  if(input.baseName!==undefined&&previous&&((previous.toolName||'')!==input.baseName||previous.createdAt!==input.baseCreatedAt))throw new Error('El nombre cambió en otra sesión. Revisa la herramienta.');
+ const selectedSubgroup=String(input.subgroupId??(previous&&groupId(previous)===selected?previous.subgroupId||'':'')),child=selectedSubgroup?subgroups(data,selected).find(g=>g.id===selectedSubgroup):null;
+ if(selectedSubgroup&&!child)throw new Error('El subgrupo ya no está disponible en este grupo.');
+ if(child&&input.subgroupCreatedAt!==undefined&&child.createdAt!==input.subgroupCreatedAt)throw new Error('El subgrupo cambió de generación en otra sesión. Revisa la clasificación.');
  const toolName=cleanToolName(input.toolName??previous?.toolName);if(toolName.length>160)throw new Error('El nombre admite hasta 160 caracteres.');
  if(toolType.length>100)throw new Error('El tipo de herramienta admite hasta 100 caracteres.');
- return {...(previous||statusEngine([])),id:serial,serial,group:toolGroup(serial),groupId:selected,toolType,toolName,...(input.toolName!==undefined?{nameSource:'MANUAL',nameSourceDocumentId:'',nameSourceDate:''}:{}),registered:true,createdAt:previous?.createdAt||input.createdAt||new Date().toISOString(),eventIds:previous?.eventIds||[]};
+ return {...(previous||statusEngine([])),id:serial,serial,group:toolGroup(serial),groupId:selected,...(selectedSubgroup||previous?.subgroupId?{subgroupId:selectedSubgroup}:{}),toolType,toolName,...(input.toolName!==undefined?{nameSource:'MANUAL',nameSourceDocumentId:'',nameSourceDate:''}:{}),registered:true,createdAt:previous?.createdAt||input.createdAt||new Date().toISOString(),eventIds:previous?.eventIds||[]};
 }
 export function catalogDiff(previous,state){
  const writes=[];
@@ -32,22 +40,31 @@ export function catalogDiff(previous,state){
  if(writes.length>475)throw new Error('La operación supera el límite seguro. Divide los cambios en grupos más pequeños.');
  return {state,writes};
 }
-export function applyGroup(previous,input){const state=structuredClone(previous),entry=groupEntry(input),old=(state.toolGroups||[]).find(g=>g.id===entry.id);if(old||groups(state).some(g=>g.name.toLocaleLowerCase()===entry.name.toLocaleLowerCase()))throw new Error('Ese grupo ya existe.');state.toolGroups=[...(state.toolGroups||[]),entry];return {...catalogDiff(previous,state),entry};}
+export function applyGroup(previous,input){
+ const state=structuredClone(previous),entry=groupEntry(input);
+ if(entry.parentId&&!groups(state).some(g=>g.id===entry.parentId))throw new Error('El grupo principal ya no está disponible.');
+ if(allGroups(state).some(g=>g.id===entry.id||((g.parentId||'')===(entry.parentId||'')&&g.name.toLocaleLowerCase()===entry.name.toLocaleLowerCase())))throw new Error('Ese nombre ya existe en esta clasificación.');
+ state.toolGroups=[...(state.toolGroups||[]),entry];return {...catalogDiff(previous,state),entry};
+}
 export function applyGroupUpdate(previous,input,{baseCreatedAt}={}){
- const state=structuredClone(previous),old=(state.toolGroups||[]).find(g=>g.id===input.id);if(!old)throw new Error('El grupo ya no está disponible.');
+ const state=structuredClone(previous),old=(state.toolGroups||[]).find(g=>g.id===input.id);if(!old)throw new Error('El grupo o subgrupo ya no está disponible.');
  if(baseCreatedAt&&old.createdAt!==baseCreatedAt)throw new Error('El grupo cambió de generación. Recupera la versión en línea para revisarlo.');
- const checked=groupEntry(input);if(groups(state).some(g=>g.id!==old.id&&g.name.toLocaleLowerCase()===checked.name.toLocaleLowerCase()))throw new Error('Ese nombre de grupo ya existe.');
+ if(input.parentId!==undefined&&String(input.parentId)!==(old.parentId||''))throw new Error('No se puede cambiar el grupo principal de un subgrupo.');
+ const checked=groupEntry({...input,parentId:old.parentId||''});if(allGroups(state).some(g=>g.id!==old.id&&(g.parentId||'')===(old.parentId||'')&&g.name.toLocaleLowerCase()===checked.name.toLocaleLowerCase()))throw new Error('Ese nombre de grupo ya existe.');
  const entry={...old,name:checked.name,color:checked.color};state.toolGroups=state.toolGroups.map(g=>g.id===old.id?entry:g);return {...catalogDiff(previous,state),entry};
 }
 export function applyGroupRemoval(previous,id,targetId,{baseCreatedAt}={}){
  const state=structuredClone(previous),old=(state.toolGroups||[]).find(g=>g.id===id);if(defaultGroups.some(g=>g.id===id))throw new Error('Los grupos iniciales no se pueden eliminar.');
  if(!old)throw new Error('El grupo ya no está disponible.');if(baseCreatedAt&&old.createdAt!==baseCreatedAt)throw new Error('El grupo cambió de generación. Recupera la versión en línea para revisarlo.');
- if(id===targetId||!groups(state).some(g=>g.id===targetId))throw new Error('Selecciona otro grupo de destino.');
- const serials=state.tools.filter(t=>groupId(t)===id).map(t=>t.serial);state.tools=state.tools.map(t=>groupId(t)===id?{...t,groupId:targetId}:t);state.toolGroups=state.toolGroups.filter(g=>g.id!==id);
- return {...catalogDiff(previous,state),serials};
+ if(!old.parentId&&subgroups(state,id).length)throw new Error('El grupo contiene subgrupos. Elimínalos primero conservando sus herramientas.');
+ const targets=old.parentId?[...groups(state).filter(g=>g.id===old.parentId),...subgroups(state,old.parentId)]:groups(state);
+ if(id===targetId||!targets.some(g=>g.id===targetId))throw new Error('Selecciona otro grupo de destino.');
+ const belongs=t=>old.parentId?t.subgroupId===id:groupId(t)===id,serials=state.tools.filter(belongs).map(t=>t.serial);
+ state.tools=state.tools.map(t=>!belongs(t)?t:old.parentId?{...t,groupId:old.parentId,subgroupId:targetId===old.parentId?'':targetId}:{...t,groupId:targetId,...(t.subgroupId?{subgroupId:''}:{})});
+ state.toolGroups=state.toolGroups.filter(g=>g.id!==id);return {...catalogDiff(previous,state),serials};
 }
 export function assignmentSerials(input){const serials=[...new Set((Array.isArray(input)?input:String(input||'').split(/[\s,;]+/)).map(serialNormalizer).filter(Boolean))];if(!serials.length||serials.length>100)throw new Error('Añade entre 1 y 100 seriales por vez.');if(!serials.every(validSerial))throw new Error('Revisa los seriales: hay valores inválidos.');return serials;}
-export function applyAssignments(previous,input){let state=previous;const serials=assignmentSerials(input.serials);for(const serial of serials){const old=state.tools.find(t=>t.serial===serial);state=applyTool(state,{serial,groupId:input.groupId,toolType:old?.toolType||'',requireExisting:input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial]}).state;}return {...catalogDiff(previous,state),serials};}
+export function applyAssignments(previous,input){let state=previous;const serials=assignmentSerials(input.serials);for(const serial of serials){const old=state.tools.find(t=>t.serial===serial);state=applyTool(state,{serial,groupId:input.groupId,subgroupId:input.subgroupId,subgroupCreatedAt:input.subgroupCreatedAt,toolType:old?.toolType||'',requireExisting:input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial]}).state;}return {...catalogDiff(previous,state),serials};}
 export function groupToolsSnapshot(state,id){return {groupCreatedAt:(state.toolGroups||[]).find(g=>g.id===id)?.createdAt||'',tools:state.tools.filter(t=>groupId(t)===id).map(t=>({serial:t.serial,...toolRemovalSnapshot(state,t.serial)})).sort((a,b)=>a.serial.localeCompare(b.serial))};}
 export function applyGroupToolsRemoval(previous,id,{snapshot}={}){
  if(!groups(previous).some(g=>g.id===id))throw new Error('El grupo ya no está disponible.');

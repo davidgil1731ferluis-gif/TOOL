@@ -15,7 +15,7 @@ test('proyectos conservan datos anteriores y aíslan el mismo PDF y serial, edic
   const edited=structuredClone(draft);edited.records[0].fields.repairDate='2026-09-02';await first.save(edited,{editing:true,baseRevision:1});
   await first.saveSchedule({title:'Solo A',date:'2026-10-04',type:'BHA'});
   const sa=await first.load(),sb=await second.load();assert.equal(sa.events[0].date,'2026-09-02');assert.equal(sb.events[0].date,'2026-10-01');assert.equal(sb.scheduledEvents.length,0);
-  assert.equal(reportModel(sa)[0].rows[0][2],'2026-09-02');assert.equal(reportModel(sb)[0].rows[0][2],'2026-10-01');
+  assert.equal(reportModel(sa)[0].rows[0][3],'2026-09-02');assert.equal(reportModel(sb)[0].rows[0][3],'2026-10-01');
   await first.clearAll();assert.deepEqual(await first.load(),emptyState());assert.equal((await second.load()).documents.length,1);assert.equal((await new DemoRepository().load()).tools.length,1);
 });
 test('rutas de proyecto aíslan cuentas y archivos, principal conserva rutas existentes',()=>{

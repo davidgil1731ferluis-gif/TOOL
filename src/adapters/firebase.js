@@ -1,5 +1,5 @@
 import {namePatch,checkNameDocument} from '../engine/toolNames.js';
-import {groupEntry,toolEntry,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,groupId,assignmentSerials,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
+import {allGroups,applyGroup,groupEntry,toolEntry,applyToolRemoval,applyGroupUpdate,applyGroupRemoval,groupId,assignmentSerials,applyGroupToolsRemoval} from '../engine/toolCatalog.js';
 import {initializeApp} from 'firebase/app';
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,onAuthStateChanged,signOut,connectAuthEmulator,reload} from 'firebase/auth';
 import {getFirestore,collection,getDocsFromServer as getDocs,doc,runTransaction,connectFirestoreEmulator,setDoc,deleteDoc,writeBatch} from 'firebase/firestore';
@@ -16,22 +16,35 @@ export class FirebaseRepository {
   constructor(uid,project=DEFAULT_PROJECT){this.uid=uid;this.path=projectPath(uid,project);}
   ref(name,id){return doc(db,...this.path,name,id);}
   async load(){const names=[...collectionNames,'scheduledEvents'];const sets=await Promise.all(names.map(n=>getDocs(collection(db,...this.path,n))));return Object.fromEntries(names.map((n,i)=>[n,sets[i].docs.map(d=>d.data())]));}
-  async saveGroup(input,options={}){const entry=groupEntry(input),seed=(await getDocs(collection(db,...this.path,'toolGroups'))).docs.map(d=>d.id);return runTransaction(db,async tx=>{const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;if(receipt&&(await tx.get(receipt)).exists())return;const state=emptyState();for(const id of new Set([...seed,entry.id])){const snap=await tx.get(this.ref('toolGroups',id));if(snap.exists())state.toolGroups.push(snap.data());}const old=state.toolGroups.find(g=>g.id===entry.id);if(old){if(old.name===entry.name&&old.color===entry.color)return old;throw new Error('Ese grupo ya existe.');}if(state.toolGroups.some(g=>g.name.toLocaleLowerCase()===entry.name.toLocaleLowerCase()))throw new Error('Ese nombre de grupo ya existe.');tx.set(this.ref('toolGroups',entry.id),entry);if(receipt)tx.set(receipt,{id:options.operationId,groupId:entry.id,createdAt:new Date().toISOString()});return entry;});}
+  async saveGroup(input,options={}){
+    const entry=groupEntry(input),seed=(await getDocs(collection(db,...this.path,'toolGroups'))).docs.map(d=>d.id);
+    return runTransaction(db,async tx=>{
+      const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;if(receipt&&(await tx.get(receipt)).exists())return;
+      const state=emptyState();for(const id of new Set([...seed,entry.id,...(entry.parentId&&!['HWDP','OTRAS'].includes(entry.parentId)?[entry.parentId]:[])])){const snap=await tx.get(this.ref('toolGroups',id));if(snap.exists())state.toolGroups.push(snap.data());}
+      const parent=entry.parentId?allGroups(state).find(g=>g.id===entry.parentId&&!g.parentId):null;
+      if(entry.parentId&&!parent)throw new Error('El grupo principal ya no está disponible.');
+      if(parent&&options.parentCreatedAt!==undefined&&(parent.createdAt||'')!==options.parentCreatedAt)throw new Error('El grupo principal cambió de generación.');
+      const old=state.toolGroups.find(g=>g.id===entry.id);if(old){if(old.name===entry.name&&old.color===entry.color&&old.createdAt===entry.createdAt&&(old.parentId||'')===(entry.parentId||''))return old;throw new Error('Ese grupo o subgrupo ya existe.');}
+      const result=applyGroup(state,entry);tx.set(this.ref('toolGroups',entry.id),result.entry);
+      if(parent&&!['HWDP','OTRAS'].includes(parent.id))tx.set(this.ref('toolGroups',parent.id),{...parent,membershipRevision:(parent.membershipRevision||0)+1});
+      if(receipt)tx.set(receipt,{id:options.operationId,groupId:entry.id,createdAt:new Date().toISOString()});return result.entry;
+    });
+  }
   async updateGroup(input,options={}){
     const seed=(await getDocs(collection(db,...this.path,'toolGroups'))).docs.map(d=>d.id);
     return runTransaction(db,async tx=>{const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;if(receipt&&(await tx.get(receipt)).exists())return;const state=emptyState();
-      for(const id of new Set([...seed,input.id,groupEntry(input).id])){const snap=await tx.get(this.ref('toolGroups',id));if(snap.exists())state.toolGroups.push(snap.data());}
+      for(const id of new Set([...seed,input.id])){const snap=await tx.get(this.ref('toolGroups',id));if(snap.exists())state.toolGroups.push(snap.data());}
       const result=applyGroupUpdate(state,input,options);tx.set(this.ref('toolGroups',input.id),result.entry);if(receipt)tx.set(receipt,{id:options.operationId,groupId:input.id,createdAt:new Date().toISOString()});return result.entry;
     });
   }
   async deleteGroup(id,targetId,options={}){
-    const [toolSet,groupSet]=await Promise.all(['tools','toolGroups'].map(name=>getDocs(collection(db,...this.path,name))));const seedGroups=groupSet.docs.map(d=>d.data()),seedGroup=seedGroups.find(g=>g.id===id),ids=toolSet.docs.map(d=>d.data()).filter(t=>groupId(t)===id).map(t=>t.id);
+    const [toolSet,groupSet]=await Promise.all(['tools','toolGroups'].map(name=>getDocs(collection(db,...this.path,name))));const seedGroups=groupSet.docs.map(d=>d.data()),seedGroup=seedGroups.find(g=>g.id===id),ids=toolSet.docs.map(d=>d.data()).filter(t=>seedGroup?.parentId?t.subgroupId===id:groupId(t)===id).map(t=>t.id);
     return runTransaction(db,async tx=>{const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;if(receipt&&(await tx.get(receipt)).exists())return;const state=emptyState();if((await tx.get(this.ref('settings','maintenance'))).data()?.deleting)throw new Error('El proyecto está en mantenimiento.');
-      for(const key of new Set([id,targetId]))if(!['HWDP','OTRAS'].includes(key)){const snap=await tx.get(this.ref('toolGroups',key));if(snap.exists())state.toolGroups.push(snap.data());}
+      for(const key of new Set([...seedGroups.map(g=>g.id),id,targetId]))if(!['HWDP','OTRAS'].includes(key)){const snap=await tx.get(this.ref('toolGroups',key));if(snap.exists())state.toolGroups.push(snap.data());}
       const group=state.toolGroups.find(g=>g.id===id);if(group&&(group.membershipRevision||0)!==(seedGroup?.membershipRevision||0))throw new Error('La lista de herramientas se está actualizando. Reintenta la sincronización.');
       for(const serial of ids){const snap=await tx.get(this.ref('tools',serial));if(snap.exists())state.tools.push(snap.data());}
       const result=applyGroupRemoval(state,id,targetId,options);for(const w of result.writes)if(w.remove)tx.delete(this.ref(w.name,w.id));else tx.set(this.ref(w.name,w.id),w.value);
-      const target=state.toolGroups.find(g=>g.id===targetId);if(target)tx.set(this.ref('toolGroups',targetId),{...target,membershipRevision:(target.membershipRevision||0)+1});
+      for(const target of state.toolGroups.filter(g=>g.id===targetId||g.id===group?.parentId))tx.set(this.ref('toolGroups',target.id),{...target,membershipRevision:(target.membershipRevision||0)+1});
       if(receipt)tx.set(receipt,{id:options.operationId,groupId:id,createdAt:new Date().toISOString()});
     });
   }
@@ -50,15 +63,15 @@ export class FirebaseRepository {
       if(receipt)tx.set(receipt,{id:options.operationId,groupId:id,createdAt:new Date().toISOString()});
     });
   }
-  async assignSerials(input,options={}){const serials=assignmentSerials(input.serials);return this.writeTools(serials.map(serial=>({serial,groupId:input.groupId,requireExisting:!!input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial],createdAt:input.createdAtBySerial?.[serial]})),options);}
+  async assignSerials(input,options={}){const serials=assignmentSerials(input.serials);return this.writeTools(serials.map(serial=>({serial,groupId:input.groupId,...(input.subgroupId!==undefined?{subgroupId:input.subgroupId}:{}),...(input.subgroupCreatedAt!==undefined?{subgroupCreatedAt:input.subgroupCreatedAt}:{}),requireExisting:!!input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial],createdAt:input.createdAtBySerial?.[serial]})),options);}
   async saveToolName(input){return runTransaction(db,async tx=>{if((await tx.get(this.ref('settings','maintenance'))).data()?.deleting)throw new Error('El proyecto está en mantenimiento.');const ref=this.ref('tools',input.serial),snap=await tx.get(ref),old=snap.exists()?snap.data():null,patch=namePatch(old,input);if(Object.keys(patch).length&&input.nameSource==='BHA')checkNameDocument((await tx.get(this.ref('documents',input.nameSourceDocumentId))).data(),input);if(Object.keys(patch).length)tx.update(ref,patch);return {...old,...patch};});}
   async saveTool(input){const result=await this.writeTools([input]);return result.entries[0];}
   async writeTools(inputs,options={}){
     return runTransaction(db,async tx=>{
       const receipt=options.operationId?this.ref('syncReceipts',options.operationId):null;if(receipt&&(await tx.get(receipt)).exists())return;
-      const state=emptyState(),memberships=new Set(),previous=new Map();for(const input of inputs){const snap=await tx.get(this.ref('tools',input.serial));const old=snap.exists()?snap.data():null;previous.set(input.serial,old);for(const id of [input.groupId,old&&groupId(old)])if(id&&!['HWDP','OTRAS'].includes(id))memberships.add(id);}
+      const state=emptyState(),memberships=new Set(),previous=new Map();for(const input of inputs){const snap=await tx.get(this.ref('tools',input.serial));const old=snap.exists()?snap.data():null;previous.set(input.serial,old);for(const id of [input.groupId,old&&groupId(old),input.subgroupId,old?.subgroupId])if(id&&!['HWDP','OTRAS'].includes(id))memberships.add(id);}
       for(const id of memberships){const snap=await tx.get(this.ref('toolGroups',id));if(snap.exists())state.toolGroups.push(snap.data());}
-      const touched=new Set(),entries=inputs.map(input=>{const old=previous.get(input.serial),entry=toolEntry(old,{...input,toolType:input.toolType??old?.toolType??''},state);if(groupId(old||{serial:input.serial})!==entry.groupId){if(old)touched.add(groupId(old));touched.add(entry.groupId);}return entry;});
+      const touched=new Set(),entries=inputs.map(input=>{const old=previous.get(input.serial),entry=toolEntry(old,{...input,toolType:input.toolType??old?.toolType??''},state);if(groupId(old||{serial:input.serial})!==entry.groupId||(old?.subgroupId||'')!==(entry.subgroupId||'')){if(old){touched.add(groupId(old));if(old.subgroupId)touched.add(old.subgroupId);}touched.add(entry.groupId);if(entry.subgroupId)touched.add(entry.subgroupId);}return entry;});
       for(const entry of entries)tx.set(this.ref('tools',entry.serial),entry);
       // Una asignación también actualiza el grupo para detectar eliminaciones concurrentes.
       for(const group of state.toolGroups)if(touched.has(group.id))tx.set(this.ref('toolGroups',group.id),{...group,membershipRevision:(group.membershipRevision||0)+1});

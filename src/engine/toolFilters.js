@@ -11,8 +11,9 @@ export function eventCountError(minEvents,maxEvents){
  if(Number.isNaN(min)||Number.isNaN(max))return 'Usa cantidades enteras de cero en adelante.';
  return min!==null&&max!==null&&min>max?'El mínimo de eventos no puede superar el máximo.':'';
 }
-export function toolMatches(tool,events,{group='ALL',search='',name='',query='',from='',to='',status='ALL',minEvents='',maxEvents=''}={}){
+export function toolMatches(tool,events,{group='ALL',subgroup='ALL',search='',name='',query='',from='',to='',status='ALL',minEvents='',maxEvents=''}={}){
  if(group!=='ALL'&&groupId(tool)!==group)return false;
+ if(subgroup!=='ALL'&&(subgroup==='NONE'?!!tool.subgroupId:tool.subgroupId!==subgroup))return false;
  if(query&&!(tool.serial.includes(serialNormalizer(query))||nameKey(tool.toolName).includes(nameKey(query))))return false;
  if(!tool.serial.includes(serialNormalizer(search)))return false;
  if(name&&!nameKey(tool.toolName).includes(nameKey(name)))return false;
