@@ -111,3 +111,4 @@ td{padding:17px 12px;border-color:#e8efed;color:#33545b}tbody tr:hover{backgroun
 .tool-filter-panel .catalog-tabs button[aria-pressed=true],.tool-filter-panel .catalog-tabs button[aria-pressed=true]:hover{background:#e4f5ed!important;color:#123d40!important;border-color:#b8e3d0;box-shadow:inset 0 0 0 1px #b8e3d0}
 .tool-filter-panel .catalog-tabs button small{color:inherit;opacity:1}
 .tool-filter-panel .catalog-tabs button:focus-visible{outline:2px solid #9ae6ce;outline-offset:3px}
+.tool-name-tooltip{position:fixed;z-index:1000;width:max-content;max-width:min(360px,calc(100vw - 24px));padding:12px 15px;border:1px solid #47756e;border-radius:12px;background:#153f43;color:#fff;font-size:13px;line-height:1.55;overflow-wrap:anywhere;box-shadow:0 8px 28px #062c3433;pointer-events:none}.tool-name-clip:focus-visible{outline:2px solid #087f72;outline-offset:3px;border-radius:3px}
