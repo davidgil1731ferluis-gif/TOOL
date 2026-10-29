@@ -44,7 +44,7 @@ export class FirebaseRepository {
       const group=state.toolGroups.find(g=>g.id===id);if(group&&(group.membershipRevision||0)!==(seedGroup?.membershipRevision||0))throw new Error('La lista de herramientas se está actualizando. Reintenta la sincronización.');
       for(const serial of ids){const snap=await tx.get(this.ref('tools',serial));if(snap.exists())state.tools.push(snap.data());}
       const result=applyGroupRemoval(state,id,targetId,options);for(const w of result.writes)if(w.remove)tx.delete(this.ref(w.name,w.id));else tx.set(this.ref(w.name,w.id),w.value);
-      for(const target of state.toolGroups.filter(g=>g.id===targetId||g.id===group?.parentId))tx.set(this.ref('toolGroups',target.id),{...target,membershipRevision:(target.membershipRevision||0)+1});
+      for(const target of state.toolGroups.filter(g=>g.id===targetId||g.id===options.targetSubgroupId||g.id===group?.parentId))tx.set(this.ref('toolGroups',target.id),{...target,membershipRevision:(target.membershipRevision||0)+1});
       if(receipt)tx.set(receipt,{id:options.operationId,groupId:id,createdAt:new Date().toISOString()});
     });
   }

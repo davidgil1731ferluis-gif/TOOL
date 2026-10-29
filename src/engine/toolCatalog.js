@@ -53,14 +53,17 @@ export function applyGroupUpdate(previous,input,{baseCreatedAt}={}){
  const checked=groupEntry({...input,parentId:old.parentId||''});if(allGroups(state).some(g=>g.id!==old.id&&(g.parentId||'')===(old.parentId||'')&&g.name.toLocaleLowerCase()===checked.name.toLocaleLowerCase()))throw new Error('Ese nombre de grupo ya existe.');
  const entry={...old,name:checked.name,color:checked.color};state.toolGroups=state.toolGroups.map(g=>g.id===old.id?entry:g);return {...catalogDiff(previous,state),entry};
 }
-export function applyGroupRemoval(previous,id,targetId,{baseCreatedAt}={}){
+export function applyGroupRemoval(previous,id,targetId,{baseCreatedAt,targetSubgroupId,targetSubgroupCreatedAt}={}){
  const state=structuredClone(previous),old=(state.toolGroups||[]).find(g=>g.id===id);if(defaultGroups.some(g=>g.id===id))throw new Error('Los grupos iniciales no se pueden eliminar.');
  if(!old)throw new Error('El grupo ya no está disponible.');if(baseCreatedAt&&old.createdAt!==baseCreatedAt)throw new Error('El grupo cambió de generación. Recupera la versión en línea para revisarlo.');
  if(!old.parentId&&subgroups(state,id).length)throw new Error('El grupo contiene subgrupos. Elimínalos primero conservando sus herramientas.');
- const targets=old.parentId?[...groups(state).filter(g=>g.id===old.parentId),...subgroups(state,old.parentId)]:groups(state);
- if(id===targetId||!targets.some(g=>g.id===targetId))throw new Error('Selecciona otro grupo de destino.');
+ const target=allGroups(state).find(g=>g.id===targetId),destinationRoot=target?.parentId||target?.id,destinationSubgroup=String(targetSubgroupId??(target?.parentId?target.id:''));
+ if(!target||!groups(state).some(g=>g.id===destinationRoot)||(!old.parentId&&destinationRoot===id)||(old.parentId&&destinationSubgroup===id))throw new Error('Selecciona otro grupo de destino.');
+ const child=destinationSubgroup?subgroups(state,destinationRoot).find(g=>g.id===destinationSubgroup):null;
+ if(destinationSubgroup&&!child)throw new Error('El subgrupo de destino ya no está disponible en este grupo.');
+ if(child&&targetSubgroupCreatedAt!==undefined&&child.createdAt!==targetSubgroupCreatedAt)throw new Error('El subgrupo de destino cambió de generación.');
  const belongs=t=>old.parentId?t.subgroupId===id:groupId(t)===id,serials=state.tools.filter(belongs).map(t=>t.serial);
- state.tools=state.tools.map(t=>!belongs(t)?t:old.parentId?{...t,groupId:old.parentId,subgroupId:targetId===old.parentId?'':targetId}:{...t,groupId:targetId,...(t.subgroupId?{subgroupId:''}:{})});
+ state.tools=state.tools.map(t=>!belongs(t)?t:{...t,groupId:destinationRoot,...(destinationSubgroup||t.subgroupId?{subgroupId:destinationSubgroup}:{})});
  state.toolGroups=state.toolGroups.filter(g=>g.id!==id);return {...catalogDiff(previous,state),serials};
 }
 export function assignmentSerials(input){const serials=[...new Set((Array.isArray(input)?input:String(input||'').split(/[\s,;]+/)).map(serialNormalizer).filter(Boolean))];if(!serials.length||serials.length>100)throw new Error('Añade entre 1 y 100 seriales por vez.');if(!serials.every(validSerial))throw new Error('Revisa los seriales: hay valores inválidos.');return serials;}

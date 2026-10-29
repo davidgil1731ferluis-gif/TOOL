@@ -6,9 +6,9 @@ Cada grupo puede contener subgrupos con nombre y color propios. Las herramientas
 
 El gestor organiza los subgrupos debajo de su grupo, con cantidades y acciones directas. Los filtros de Herramientas distinguen Todos, Sin subgrupo y cada subgrupo. La selección múltiple preselecciona la clasificación común y muestra el destino al guardar. Cambiar padre elimina únicamente una selección incompatible; no modifica nombres ni reportes.
 
-Todas las hojas del Excel incluyen **Grupo** y **Subgrupo** en columnas contiguas. Excel de esta vista combina estos filtros y conserva el historial completo de las herramientas elegidas. Eliminar un subgrupo traslada sus seriales a Sin subgrupo o a un hermano, conservando la información. Los padres con subgrupos están protegidos contra eliminaciones que dejarían referencias huérfanas.
+Todas las hojas del Excel incluyen **Grupo** y **Subgrupo** en columnas contiguas. Excel de esta vista combina estos filtros y conserva el historial completo de las herramientas elegidas. Al eliminar una clasificación se puede elegir o crear el grupo y subgrupo de destino en el mismo formulario, conservando todos sus seriales e historiales. Los padres con subgrupos están protegidos contra eliminaciones que dejarían referencias huérfanas.
 
-La cola conserva las asignaciones sin conexión, con comprobación de generaciones y pertenencia al sincronizar. Las reglas de Firestore de esta entrega deben publicarse antes del frontend; amplían la clasificación sin ampliar el acceso a datos ajenos. Validación: 180 pruebas automatizadas, once escenarios de navegador con almacenamiento aislado, Excel descargado y configuración/compilación de producción. Ver VERIFICACION-SUBGRUPOS.md.
+La cola conserva las asignaciones sin conexión, con comprobación de generaciones y pertenencia al sincronizar. Las reglas de Firestore de esta entrega deben publicarse antes del frontend; amplían la clasificación sin ampliar el acceso a datos ajenos. Validación: 182 pruebas automatizadas, once escenarios de navegador con almacenamiento aislado, Excel descargado y configuración/compilación de producción. Ver VERIFICACION-SUBGRUPOS.md.
 
 ## Indicadores y selección múltiple (29 de octubre de 2026)
 
