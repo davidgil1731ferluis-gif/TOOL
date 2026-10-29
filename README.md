@@ -1,5 +1,15 @@
 # ToolTrace V5.2 · Steep
 
+## Indicadores y selección múltiple (29 de octubre de 2026)
+
+El resumen incluye disponibilidad técnica, reparables/fuera de servicio, antigüedad de inspección y reparaciones recurrentes. Se calculan desde los registros del proyecto, con detalles por serial y periodos ajustables. Se renuevan cada minuto mientras el resumen está abierto y al recuperar foco/conexión; la caché y los cambios pendientes se identifican. No se guardan cifras simuladas ni se interpreta la antigüedad como vencimiento. Un proyecto vacío muestra — para disponibilidad.
+
+Herramientas unifica OPERATIVA y CONFORME en **Operativa / conforme**, conservando los códigos históricos. Los nombres largos se recortan visualmente y permanecen completos en ficha/edición. Las acciones se mantienen visibles sin barra horizontal; tablet y móvil presentan tarjetas.
+
+Las casillas permiten seleccionar herramientas o **Seleccionar todas** las que coincidan con los filtros. **Asignar grupo** abre un selector y permite crear un grupo RGB en el mismo diálogo. La selección se conserva al filtrar, muestra su total y se reinicia al cambiar de proyecto. Las asignaciones usan lotes de hasta 100 seriales con la cola existente y rechazan seriales eliminados/recreados antes de sincronizar. Se conservan nombres, reportes, eventos y agenda.
+
+Validación: 160 pruebas automatizadas y once escenarios de navegador con almacenamiento aislado. Ver VERIFICACION-DASHBOARD-SELECCION.md para fórmulas, actualización y límites. No cambia el modelo de datos ni las reglas de Firebase.
+
 ## Búsqueda unificada, cantidad de eventos y colores RGB
 
 En Herramientas, **Buscar por serial o nombre** consulta ambos campos con una sola casilla. Mantiene la normalización de seriales y permite buscar nombres sin distinguir tildes o mayúsculas. Grupo, fechas, estado y cantidad se combinan con esa consulta.
@@ -10,7 +20,7 @@ El panel de filtros se distingue mediante un fondo oscuro, controles claros, con
 
 Los formularios de Nuevo/Editar grupo y Nuevo grupo dentro de Editar herramienta incorporan selector visual y canales **R, G y B**, de 0 a 255. Los valores se sincronizan con la muestra y las paletas. Se conserva el mismo color hexadecimal de seis dígitos en los datos, compatible con las reglas actuales de Firebase. Los valores RGB inválidos no se guardan.
 
-Validación: 141 pruebas automatizadas y diez escenarios de navegador con datos aislados. Ver VERIFICACION-FILTROS-RGB.md. Las propuestas de indicadores del dashboard se documentan por separado; esta actualización no añade indicadores ni modifica sus cálculos.
+Validación: 141 pruebas automatizadas y diez escenarios de navegador con datos aislados. Ver VERIFICACION-FILTROS-RGB.md. El dashboard se amplía en la actualización posterior descrita arriba.
 
 ## Extracción, nombres automáticos y diseño renovado
 

@@ -1,6 +1,7 @@
 import {nameKey} from './toolNames.js';
 import {groupId} from './toolCatalog.js';
 import {serialNormalizer} from './serialNormalizer.js';
+import {isUsableStatus} from './dashboardMetrics.js';
 export function eventBound(value){
  if(value===undefined||value===null||String(value).trim()==='')return null;
  const text=String(value).trim(),number=Number(text);return /^\d+$/.test(text)&&Number.isSafeInteger(number)?number:NaN;
@@ -15,7 +16,7 @@ export function toolMatches(tool,events,{group='ALL',search='',name='',query='',
  if(query&&!(tool.serial.includes(serialNormalizer(query))||nameKey(tool.toolName).includes(nameKey(query))))return false;
  if(!tool.serial.includes(serialNormalizer(search)))return false;
  if(name&&!nameKey(tool.toolName).includes(nameKey(name)))return false;
- if(status!=='ALL'&&(tool.status||'SIN_ESTADO_TECNICO')!==status)return false;
+ if(status==='APTAS'){if(!isUsableStatus(tool.status))return false;}else if(status!=='ALL'&&(tool.status||'SIN_ESTADO_TECNICO')!==status)return false;
  if(from&&to&&from>to)return false;
  if(eventCountError(minEvents,maxEvents))return false;
  const min=eventBound(minEvents),max=eventBound(maxEvents);if(min===null&&max===null&&!from&&!to)return true;

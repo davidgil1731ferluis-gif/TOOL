@@ -50,7 +50,7 @@ export class FirebaseRepository {
       if(receipt)tx.set(receipt,{id:options.operationId,groupId:id,createdAt:new Date().toISOString()});
     });
   }
-  async assignSerials(input,options={}){const serials=assignmentSerials(input.serials);return this.writeTools(serials.map(serial=>({serial,groupId:input.groupId,createdAt:input.createdAtBySerial?.[serial]})),options);}
+  async assignSerials(input,options={}){const serials=assignmentSerials(input.serials);return this.writeTools(serials.map(serial=>({serial,groupId:input.groupId,requireExisting:!!input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial],createdAt:input.createdAtBySerial?.[serial]})),options);}
   async saveToolName(input){return runTransaction(db,async tx=>{if((await tx.get(this.ref('settings','maintenance'))).data()?.deleting)throw new Error('El proyecto está en mantenimiento.');const ref=this.ref('tools',input.serial),snap=await tx.get(ref),old=snap.exists()?snap.data():null,patch=namePatch(old,input);if(Object.keys(patch).length&&input.nameSource==='BHA')checkNameDocument((await tx.get(this.ref('documents',input.nameSourceDocumentId))).data(),input);if(Object.keys(patch).length)tx.update(ref,patch);return {...old,...patch};});}
   async saveTool(input){const result=await this.writeTools([input]);return result.entries[0];}
   async writeTools(inputs,options={}){

@@ -17,6 +17,7 @@ export function groupEntry(input){
  return {id:'g_'+encoded,name,color,createdAt:input.createdAt||new Date().toISOString()};
 }
 export function toolEntry(previous,input,data){
+ if(input.requireExisting&&(!previous||previous.createdAt!==input.baseCreatedAt))throw new Error('La herramienta cambió en otra sesión o ya no está disponible. Revisa la selección.');
  const serial=serialNormalizer(input.serial),selected=String(input.groupId||toolGroup(serial)),toolType=String(input.toolType||'').trim();
  if(!validSerial(serial))throw new Error('Escribe un serial válido de 3 a 64 caracteres.');
  if(!groups(data).some(g=>g.id===selected))throw new Error('El grupo ya no está disponible.');
@@ -46,7 +47,7 @@ export function applyGroupRemoval(previous,id,targetId,{baseCreatedAt}={}){
  return {...catalogDiff(previous,state),serials};
 }
 export function assignmentSerials(input){const serials=[...new Set((Array.isArray(input)?input:String(input||'').split(/[\s,;]+/)).map(serialNormalizer).filter(Boolean))];if(!serials.length||serials.length>100)throw new Error('Añade entre 1 y 100 seriales por vez.');if(!serials.every(validSerial))throw new Error('Revisa los seriales: hay valores inválidos.');return serials;}
-export function applyAssignments(previous,input){let state=previous;const serials=assignmentSerials(input.serials);for(const serial of serials){const old=state.tools.find(t=>t.serial===serial);state=applyTool(state,{serial,groupId:input.groupId,toolType:old?.toolType||''}).state;}return {...catalogDiff(previous,state),serials};}
+export function applyAssignments(previous,input){let state=previous;const serials=assignmentSerials(input.serials);for(const serial of serials){const old=state.tools.find(t=>t.serial===serial);state=applyTool(state,{serial,groupId:input.groupId,toolType:old?.toolType||'',requireExisting:input.requireExisting,baseCreatedAt:input.createdAtBySerial?.[serial]}).state;}return {...catalogDiff(previous,state),serials};}
 export function groupToolsSnapshot(state,id){return {groupCreatedAt:(state.toolGroups||[]).find(g=>g.id===id)?.createdAt||'',tools:state.tools.filter(t=>groupId(t)===id).map(t=>({serial:t.serial,...toolRemovalSnapshot(state,t.serial)})).sort((a,b)=>a.serial.localeCompare(b.serial))};}
 export function applyGroupToolsRemoval(previous,id,{snapshot}={}){
  if(!groups(previous).some(g=>g.id===id))throw new Error('El grupo ya no está disponible.');
